@@ -3,10 +3,17 @@ const withOffline = require('next-pwa')
 
 const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === 'true' })
 
+const isProd = process.env.NODE_ENV === 'production'
+const basePath =
+  process.env.BASE_PATH !== undefined ? process.env.BASE_PATH : isProd ? '/unity-carbon' : ''
+
 module.exports = withBundleAnalyzer(
   withOffline({
+    basePath: basePath,
+    assetPrefix: basePath,
+    trailingSlash: true,
     pwa: {
-      disable: process.env.NODE_ENV !== 'production',
+      disable: true,
       dest: 'public',
       register: false,
       skipWaiting: false,
