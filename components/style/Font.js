@@ -1,19 +1,12 @@
 import React from 'react'
+import Head from 'next/head'
 
-import { FONT_FAMILY } from '../../lib/constants'
+const BASE_PATH = process.env.BASE_PATH || ''
 
 export default function Font() {
   return (
-    <style jsx global>
-      {`
-        @font-face {
-          font-family: '${FONT_FAMILY}';
-          font-display: swap;
-          src: url('/static/fonts/JetBrainsMonoHangul-Regular.ttf') format('truetype');
-          font-weight: 400;
-          font-style: normal;
-        }
-      `}
-    </style>
+    <Head>
+      <link rel="stylesheet" href={`${BASE_PATH}/static/fonts/fonts.css`} />
+    </Head>
   )
 }

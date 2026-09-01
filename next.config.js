@@ -5,13 +5,16 @@ const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === 'tr
 
 const isProd = process.env.NODE_ENV === 'production'
 const basePath =
-  process.env.BASE_PATH !== undefined ? process.env.BASE_PATH : isProd ? '/unity-carbon' : ''
+  process.env.BASE_PATH !== undefined ? process.env.BASE_PATH : isProd ? '/Unity-Carbon' : ''
 
 module.exports = withBundleAnalyzer(
   withOffline({
     basePath: basePath,
     assetPrefix: basePath,
     trailingSlash: true,
+    env: {
+      BASE_PATH: basePath,
+    },
     pwa: {
       disable: true,
       dest: 'public',

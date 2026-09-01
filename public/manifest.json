@@ -5,16 +5,16 @@
   "theme_color": "#121212",
   "description": "유니티 소스 코드를 아름다운 이미지로 만들고 공유하는 가장 쉬운 방법",
   "display": "standalone",
-  "start_url": "/",
+  "start_url": "./",
   "icons": [
     {
-      "src": "/static/brand/icon.png",
+      "src": "static/brand/icon.png",
       "type": "image/png",
       "sizes": "448x448",
       "purpose": "any maskable"
     },
     {
-      "src": "/static/brand/desktop.png",
+      "src": "static/brand/desktop.png",
       "type": "image/png",
       "sizes": "512x512"
     }

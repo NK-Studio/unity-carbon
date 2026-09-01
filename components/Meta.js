@@ -22,6 +22,7 @@ export const CodeMirrorLink = () => (
   />
 )
 
+const BASE_PATH = process.env.BASE_PATH || ''
 const title = 'NKStudio'
 const description = '유니티 소스 코드를 아름다운 이미지로 만들고 공유하는 가장 쉬운 방법'
 export const MetaTags = React.memo(() => (
@@ -32,13 +33,13 @@ export const MetaTags = React.memo(() => (
     <meta name="application-name" content={title} />
     <meta name="og:title" content={title} />
     <meta name="og:description" content={description} />
-    <meta name="og:image" content="/static/brand/banner.png" />
+    <meta name="og:image" content={`${BASE_PATH}/static/brand/banner.png`} />
     <meta name="theme-color" content={COLORS.BLACK} />
     <meta name="apple-mobile-web-app-status-bar-style" content={COLORS.BLACK} />
     <title>{title} | 소스 코드를 문서화하다.</title>
-    <link rel="shortcut icon" href="/favicon.ico" />
-    <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png" />
+    <link rel="shortcut icon" href={`${BASE_PATH}/favicon.ico`} />
+    <link rel="manifest" href={`${BASE_PATH}/manifest.json`} />
+    <link rel="apple-touch-icon" href={`${BASE_PATH}/static/brand/apple-touch-icon.png`} />
   </Head>
 ))
 

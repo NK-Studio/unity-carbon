@@ -1,17 +1,28 @@
 import React from 'react'
 import EmbedPage from './index'
 
-export async function getStaticPaths() {
-  return {
-    paths: [],
-    fallback: false,
+import api from '../../lib/api'
+
+class EmbedIdPage extends React.PureComponent {
+  static async getInitialProps({ req, query }) {
+    const { id: path, filename } = query
+    const parameter = path && path.length >= 19 && path.indexOf('.') < 0 ? path : null
+
+    let snippet
+    if (parameter) {
+      const host = req ? req.headers.host : undefined
+      snippet = await api.snippet.get(parameter, { host, filename })
+      if (snippet) {
+        return { snippet }
+      }
+    }
+
+    return {}
+  }
+
+  render() {
+    return <EmbedPage {...this.props} />
   }
 }
 
-export async function getStaticProps() {
-  return { props: {} }
-}
-
-export default React.memo(function EmbedIdPage(props) {
-  return <EmbedPage {...props} />
-})
+export default EmbedIdPage

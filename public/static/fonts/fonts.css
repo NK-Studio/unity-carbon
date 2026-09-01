@@ -1,0 +1,7 @@
+@font-face {
+  font-family: 'JetBrains Mono Hangul';
+  font-display: swap;
+  src: url('./JetBrainsMonoHangul-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
