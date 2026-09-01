@@ -13,10 +13,8 @@ import Overlay from './Overlay'
 import BackgroundSelect from './BackgroundSelect'
 import Carbon from './Carbon'
 import ExportMenu from './ExportMenu'
-import ShareMenu from './ShareMenu'
 import CopyMenu from './CopyMenu'
-import Themes from './Themes'
-import FontFace from './FontFace'
+import GlobalHighlights from './Themes/GlobalHighlights'
 import LanguageIcon from './svg/Language'
 import {
   LANGUAGES,
@@ -30,7 +28,6 @@ import {
   DEFAULT_SETTINGS,
   DEFAULT_LANGUAGE,
   DEFAULT_THEME,
-  FONTS,
 } from '../lib/constants'
 import { getRouteState } from '../lib/routing'
 import { getSettings, unescapeHtml, formatCode, omit } from '../lib/util'
@@ -42,7 +39,7 @@ const SnippetToolbar = dynamic(() => import('./SnippetToolbar'), {
   loading: () => null,
 })
 
-const getConfig = omit(['code', 'titleBar'])
+const getConfig = omit(['code', 'titleBar', 'theme', 'highlights', 'fontUrl'])
 const unsplashPhotographerCredit = /\n\n\/\/ Photo by.+?on Unsplash/
 
 class Editor extends React.Component {
@@ -51,6 +48,8 @@ class Editor extends React.Component {
   state = {
     ...DEFAULT_SETTINGS,
     ...this.props.snippet,
+    fontFamily: DEFAULT_SETTINGS.fontFamily,
+    fontUrl: null,
     loading: true,
   }
 
@@ -72,16 +71,26 @@ class Editor extends React.Component {
       newState.language = unescapeHtml(newState.language)
     }
 
-    if (newState.fontFamily && !FONTS.find(({ id }) => id === newState.fontFamily)) {
-      newState.fontFamily = DEFAULT_SETTINGS.fontFamily
+    const supportedLanguage =
+      LANGUAGE_NAME_HASH[newState.language] ||
+      LANGUAGE_MIME_HASH[newState.language] ||
+      LANGUAGE_MODE_HASH[newState.language]
+    if (newState.language && !supportedLanguage) {
+      newState.language = 'text'
     }
+
+    newState.theme = DEFAULT_THEME.id
+    newState.highlights = null
+    newState.fontFamily = DEFAULT_SETTINGS.fontFamily
+    newState.fontUrl = null
+    delete newState.preset
 
     this.setState(newState)
   }
 
   carbonNode = React.createRef()
 
-  getTheme = () => this.props.themes.find(t => t.id === this.state.theme) || DEFAULT_THEME
+  getTheme = () => DEFAULT_THEME
 
   onUpdate = debounce(updates => this.props.onUpdate(updates), 750, {
     trailing: true,
@@ -101,8 +110,15 @@ class Editor extends React.Component {
       format,
       squared = this.state.squaredImage,
       exportSize = (EXPORT_SIZES_HASH[this.state.exportSize] || DEFAULT_EXPORT_SIZE).value,
-    } = { format: 'png' }
+    } = { format: 'blob' }
   ) => {
+    if (document.fonts && document.fonts.load) {
+      await document.fonts.load(
+        `400 ${this.state.fontSize} "${DEFAULT_SETTINGS.fontFamily}"`,
+        `${this.state.code || DEFAULT_CODE}\n한글 English`
+      )
+    }
+
     const node = this.carbonNode.current
 
     const width = node.offsetWidth * exportSize
@@ -143,38 +159,12 @@ class Editor extends React.Component {
             .replace(/%0A/g, '\n')
             // https://stackoverflow.com/questions/7604436/xmlparseentityref-no-name-warnings-while-loading-xml-into-a-php-file
             .replace(/&(?!#?[a-z0-9]+;)/g, '&amp;')
-            // remove other fonts which are not used
-            .replace(
-              // current font-family used
-              new RegExp(
-                '@font-face\\s+{\\s+font-family: (?!"*' + this.state.fontFamily + ').*?}',
-                'g'
-              ),
-              ''
-            )
         )
         .then(uri => uri.slice(uri.indexOf(',') + 1))
         .then(data => new Blob([data], { type: 'image/svg+xml' }))
     }
 
-    if (format === 'blob') {
-      return domtoimage.toBlob(node, config)
-    }
-
-    // Twitter and Imgur needs regular dataURLs
-    return domtoimage.toPng(node, config)
-  }
-
-  tweet = () => {
-    this.getCarbonImage({ format: 'png' }).then(
-      this.context.tweet.bind(null, this.state.code || DEFAULT_CODE)
-    )
-  }
-
-  imgur = () => {
-    const prefix = this.state.name || 'carbon'
-
-    return this.getCarbonImage({ format: 'png' }).then(data => this.context.imgur(data, prefix))
+    return domtoimage.toBlob(node, config)
   }
 
   exportImage = (format = 'blob', options = {}) => {
@@ -215,9 +205,6 @@ class Editor extends React.Component {
 
   updateSetting = (key, value) => {
     this.updateState({ [key]: value })
-    if (Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, key)) {
-      this.updateState({ preset: null })
-    }
   }
 
   resetDefaultSettings = () => {
@@ -231,7 +218,6 @@ class Editor extends React.Component {
         backgroundImage: file.content,
         backgroundImageSelection: null,
         backgroundMode: 'image',
-        preset: null,
       })
     } else {
       this.updateState({ code: file.content, language: 'auto' })
@@ -251,35 +237,30 @@ class Editor extends React.Component {
         code:
           code.replace(unsplashPhotographerCredit, '') +
           `\n\n// Photo by ${photographer.name} on Unsplash`,
-        preset: null,
       }))
     } else {
-      this.updateState({ ...changes, preset: null })
+      this.updateState(changes)
     }
   }
 
-  updateTheme = theme => this.updateState({ theme, highlights: null })
-  updateHighlights = updates =>
-    this.setState(({ highlights = {} }) => ({
-      highlights: {
-        ...highlights,
-        ...updates,
-      },
-    }))
-
-  createTheme = theme => {
-    this.props.updateThemes(themes => [theme, ...themes])
-    this.updateTheme(theme.id)
+  applyConfig = config => {
+    const settings = { ...config }
+    delete settings.id
+    delete settings.custom
+    delete settings.icon
+    delete settings.preset
+    delete settings.theme
+    delete settings.highlights
+    delete settings.fontFamily
+    delete settings.fontUrl
+    this.updateState({
+      ...settings,
+      theme: DEFAULT_THEME.id,
+      highlights: null,
+      fontFamily: DEFAULT_SETTINGS.fontFamily,
+      fontUrl: null,
+    })
   }
-
-  removeTheme = id => {
-    this.props.updateThemes(themes => themes.filter(t => t.id !== id))
-    if (this.state.theme.id === id) {
-      this.updateTheme(DEFAULT_THEME.id)
-    }
-  }
-
-  applyPreset = ({ id: preset, ...settings }) => this.updateState({ preset, ...settings })
 
   format = () =>
     formatCode(this.state.code)
@@ -320,7 +301,6 @@ class Editor extends React.Component {
 
   render() {
     const {
-      highlights,
       language,
       backgroundColor,
       backgroundImage,
@@ -337,15 +317,6 @@ class Editor extends React.Component {
     return (
       <div className="editor">
         <Toolbar>
-          <Themes
-            theme={theme}
-            highlights={highlights}
-            update={this.updateTheme}
-            updateHighlights={this.updateHighlights}
-            remove={this.removeTheme}
-            create={this.createTheme}
-            themes={this.props.themes}
-          />
           <Dropdown
             title="Language"
             icon={languageIcon}
@@ -362,7 +333,6 @@ class Editor extends React.Component {
             <div className="setting-buttons">
               <BackgroundSelect
                 onChange={this.updateBackground}
-                updateHighlights={this.updateHighlights}
                 mode={backgroundMode}
                 color={backgroundColor}
                 image={backgroundImage}
@@ -373,14 +343,12 @@ class Editor extends React.Component {
                 onChange={this.updateSetting}
                 resetDefaultSettings={this.resetDefaultSettings}
                 format={this.format}
-                applyPreset={this.applyPreset}
-                getCarbonImage={this.getCarbonImage}
+                applyConfig={this.applyConfig}
               />
               <CopyMenu copyImage={this.copyImage} carbonRef={this.carbonNode.current} />
             </div>
             <div id="style-editor-button" />
-            <div className="share-buttons">
-              <ShareMenu tweet={this.tweet} imgur={this.imgur} />
+            <div className="export-buttons">
               <ExportMenu
                 onChange={this.updateSetting}
                 exportImage={this.exportImage}
@@ -389,6 +357,8 @@ class Editor extends React.Component {
             </div>
           </div>
         </Toolbar>
+
+        <GlobalHighlights highlights={DEFAULT_THEME.highlights} />
 
         <Dropzone accept="image/*, text/*, application/*" onDrop={this.onDrop}>
           {({ canDrop }) => (
@@ -400,7 +370,7 @@ class Editor extends React.Component {
               <Carbon
                 key={language}
                 ref={this.carbonNode}
-                config={this.state}
+                config={{ ...this.state, theme: DEFAULT_THEME.id, highlights: null }}
                 onChange={this.updateCode}
                 updateWidth={this.updateWidth}
                 updateWidthConfirm={this.sync}
@@ -423,7 +393,6 @@ class Editor extends React.Component {
           name={config.name}
           onChange={this.updateSetting}
         />
-        <FontFace {...config} />
         <style jsx>
           {`
             .editor {
@@ -433,12 +402,12 @@ class Editor extends React.Component {
               padding: 16px;
             }
 
-            .share-buttons,
+            .export-buttons,
             .setting-buttons {
               display: flex;
               height: 40px;
             }
-            .share-buttons {
+            .export-buttons {
               margin-left: auto;
             }
             .toolbar-second-row {

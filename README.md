@@ -110,18 +110,22 @@
 
 ## Introduction
 
-You know [all](https://twitter.com/dan_abramov/status/890191815567175680) [of those](https://twitter.com/reactjs/status/890511993261654017) [code screenshots](https://twitter.com/notquiteleo/status/873483329345028096) you see on Twitter? Though the code's usually impressive, we saw room for improvement in the aesthetic department. Carbon makes it easy to create and share beautiful images of your source code. So what are you waiting for? Go impress all of your followers with your newfound design prowess.
+You know all of those code screenshots you see online? Though the code's usually impressive, we saw room for improvement in the aesthetic department. Carbon makes it easy to create and share beautiful images of your source code. So what are you waiting for? Go impress all of your followers with your newfound design prowess.
 
 <p align="center">
   <img width="100%" alt="Carbon example" src="https://user-images.githubusercontent.com/8397708/63456416-b27d1a80-c403-11e9-9572-105b089be885.png">
 </p>
 
+## Project font
+
+This fork uses [Jetendard](https://github.com/kuskhan/jetendard) for the app UI, code editor, embeds, and exported images. Hangul is served from [Nanum Gothic Coding](https://fonts.google.com/specimen/Nanum+Gothic+Coding) instead: Jetendard reserves two Latin cells per syllable but draws the glyph much narrower, which reads as loose tracking. The Korean face is declared under the same family name with a `unicode-range`, so it applies per character and is only downloaded when Korean is actually rendered, and `size-adjust` keeps a syllable exactly two Latin cells wide. Both fonts are bundled locally, so rendering does not depend on a third-party font CDN. Each is distributed under the SIL Open Font License 1.1; the bundled licenses are at `public/static/fonts/Jetendard-LICENSE.txt` and `public/static/fonts/NanumGothicCoding-LICENSE.txt`.
+
 ## Features
 
-- **Customization**. Customize things like your image's syntax theme, font style, and more
-- **Share quickly**. Save your image or
-  a link with one click
-- **Save snippets**. Create an account to save snippets for later. Shared snippets are automatically unfurled on Twitter and Slack.
+- **Unity-aware C#**. Highlight Unity Engine, Editor, and common package APIs with Rider Islands Dark
+- **Customization**. Customize things like your image's background, spacing, and shadows
+- **Share quickly**. Save your image, copy it to your clipboard, or share a link with one click
+- **Save snippets**. Create an account to save snippets for later. Shared snippets are automatically unfurled on Slack.
 
 ## Usage
 
@@ -135,7 +139,7 @@ There are a few different ways to import code into Carbon:
 
 #### Customization
 
-Once you've got all of your code into Carbon, you can customize your image by changing the syntax theme, background color, window theme, padding, shadows, fonts, and more.
+Once you've got all of your code into Carbon, you can customize your image by changing the background color, window theme, padding, shadows, and more. The font is fixed to Jetendard (with Nanum Gothic Coding for Hangul) and syntax colors use Rider Islands Dark.
 
 #### Exporting & Sharing
 
@@ -143,7 +147,7 @@ After you've customized your image you can share your snippet in a number of way
 
 ##### Create a saved snippet
 
-Sharing a saved snippet will automatically unfurl the image on platforms like Twitter and Slack. This lets users see your creation, while also giving them access to the source code via the link. Better yet, if you need to make an update, simply follow the link yourself to edit the snippet directly.
+Sharing a saved snippet will automatically unfurl the image on platforms like Slack. This lets users see your creation, while also giving them access to the source code via the link. Better yet, if you need to make an update, simply follow the link yourself to edit the snippet directly.
 
 To create a saved snippet:
 
@@ -158,10 +162,6 @@ This is the recommended method for sharing Carbon on your own website or blog. R
 You can embed any Carbon snippet in your website directly using the `carbon.now.sh/embed` URL. The "Copy Menu" lets you quickly copy the correct iFrame snippet, or the encoded URL for embedding on platforms like Medium.
 
 Finally, you can also embed saved snippets or GitHub gists using `carbon.now.sh/embed/:id`.
-
-##### Use the Tweet button
-
-The Tweet button will not only share the image on Twitter, but it will also correctly encode the `alt` text to ensure your images are accessible. However, if you want to tweet image yourself, please check out [how to make your Twitter images accessible](https://help.twitter.com/en/using-twitter/picture-descriptions).
 
 ##### Download the image directly
 

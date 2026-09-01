@@ -6,43 +6,30 @@ import { editorVisible } from '../support'
 // so instead visit the desired url in each test
 
 describe('localStorage', () => {
-  const themeDropdown = () => cy.get('.toolbar .dropdown-container').first()
-
-  const pickTheme = (name = 'Blackboard') =>
-    themeDropdown()
-      .click()
-      .contains(name)
-      .click()
-
   it.skip('is empty initially', () => {
     cy.visit('/')
     editorVisible()
-    cy.window()
-      .its('localStorage')
-      .should('have.length', 0)
+    cy.window().its('localStorage').should('have.length', 0)
   })
 
-  it('saves on theme change', () => {
-    cy.visit('/')
+  it('ignores a legacy saved theme without deleting it', () => {
+    const legacySettings = {
+      theme: 'blackboard',
+      highlights: { background: 'red' },
+    }
+
+    cy.visit('/', {
+      onBeforeLoad(window) {
+        window.localStorage.setItem('CARBON_STATE', JSON.stringify(legacySettings))
+      },
+    })
     editorVisible()
-    pickTheme('Blackboard')
-    themeDropdown()
-      .click()
-      .contains('Blackboard')
 
-    cy.wait(1500) // URL updates are debounced
-
+    cy.get('[data-cy="themes-container"]').should('not.exist')
+    cy.get('.CodeMirror').should('have.css', 'background-color', 'rgb(25, 26, 28)')
     cy.window()
       .its('localStorage.CARBON_STATE')
       .then(JSON.parse)
-      .its('theme')
-      .should('equal', 'blackboard')
-
-    // visiting page again restores theme from localStorage
-    cy.visit('/')
-    pickTheme('Cobalt')
-    cy.wait(1500) // URL updates are debounced
-
-    cy.url().should('contain', 't=cobalt')
+      .should('deep.equal', legacySettings)
   })
 })

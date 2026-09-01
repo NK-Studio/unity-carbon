@@ -12,13 +12,18 @@ const pickerStyle = {
 
 export default function ColorPicker(props) {
   const [color, setColor] = React.useState(props.color)
-  const { onChange = () => {}, presets, style, disableAlpha } = props
+  const { onChange = () => {}, onChangePreview = () => {}, presets, style, disableAlpha } = props
+
+  const handleChange = value => {
+    setColor(value)
+    onChangePreview(value)
+  }
 
   return (
     <React.Fragment>
       <SketchPicker
         styles={{ picker: style || pickerStyle }}
-        onChange={setColor}
+        onChange={handleChange}
         color={typeof color === 'string' ? color : stringifyColor(color)}
         onChangeComplete={onChange}
         presetColors={presets}

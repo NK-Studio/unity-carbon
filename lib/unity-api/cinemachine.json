@@ -1,0 +1,44 @@
+{
+  "namespaces": [
+    "Cinemachine",
+    "Unity.Cinemachine"
+  ],
+  "types": [
+    "CinemachineBrain",
+    "CinemachineCamera",
+    "CinemachineCameraOffset",
+    "CinemachineConfiner2D",
+    "CinemachineFreeLook",
+    "CinemachineImpulseSource",
+    "CinemachineTargetGroup",
+    "CinemachineVirtualCamera",
+    "CinemachineVirtualCameraBase"
+  ],
+  "interfaces": [],
+  "structs": [],
+  "enums": [],
+  "methods": [
+    "GenerateImpulse",
+    "GetActiveBrain",
+    "IsLive",
+    "OnTargetObjectWarped",
+    "UpdateCameraState"
+  ],
+  "members": [
+    "ActiveVirtualCamera",
+    "Follow",
+    "LookAt",
+    "OutputCamera",
+    "Priority",
+    "StandbyUpdate",
+    "State"
+  ],
+  "attributes": [],
+  "enumMembers": [
+    "Always",
+    "FixedUpdate",
+    "LateUpdate",
+    "Never",
+    "SmartUpdate"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "namespaces": [
+    "Unity.Scripting.LifecycleManagement"
+  ],
+  "types": [
+    "AutoStaticsCleanupAttribute",
+    "AutoStaticsCleanupOnCodeReloadAttribute",
+    "BurstCleanupAttribute",
+    "BurstInitializeAttribute",
+    "ClearCacheBetweenCodeLoadsAttribute",
+    "IgnoreForUAL0015Attribute",
+    "LifecycleAttributeBase",
+    "NoAutoStaticsCleanupAttribute",
+    "OnAssemblyLoadedAttribute",
+    "OnAssemblyUnloadingAttribute",
+    "OnCodeDeinitializingAttribute",
+    "OnCodeInitializingAttribute",
+    "OnCodeLoadedAttribute",
+    "OnCodeUnloadingAttribute"
+  ],
+  "interfaces": [],
+  "structs": [],
+  "enums": [],
+  "methods": [],
+  "members": [],
+  "attributes": [
+    "AutoStaticsCleanup",
+    "AutoStaticsCleanupOnCodeReload",
+    "BurstCleanup",
+    "BurstInitialize",
+    "ClearCacheBetweenCodeLoads",
+    "IgnoreForUAL0015",
+    "NoAutoStaticsCleanup",
+    "OnAssemblyLoaded",
+    "OnAssemblyUnloading",
+    "OnCodeDeinitializing",
+    "OnCodeInitializing",
+    "OnCodeLoaded",
+    "OnCodeUnloading"
+  ],
+  "enumMembers": []
+}

@@ -89,16 +89,6 @@ function Plan({ selectBilling }) {
             <td>✔</td>
           </tr>
           <tr>
-            <td>Saved custom themes/presets {soon}</td>
-            <td></td>
-            <td>✔</td>
-          </tr>
-          <tr>
-            <td>Twitter card unfurls {soon}</td>
-            <td></td>
-            <td>✔</td>
-          </tr>
-          <tr>
             <td></td>
             <td>FREE FOREVER</td>
             <td>$5.00 / month</td>

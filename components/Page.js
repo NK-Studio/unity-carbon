@@ -2,7 +2,6 @@ import React from 'react'
 import AuthContext from './AuthContext'
 import Meta from './Meta'
 import Header from './Header'
-import Footer from './Footer'
 import Announcement from './Announcement'
 import LoginButton from './LoginButton'
 
@@ -16,7 +15,7 @@ class Page extends React.Component {
   render() {
     const { children, enableHeroText, flex } = this.props
     return (
-      <main className="main mb3">
+      <main className="main">
         <Meta />
         <AuthContext>
           <Announcement />
@@ -27,13 +26,13 @@ class Page extends React.Component {
           <div className="page">{children}</div>
         </AuthContext>
 
-        <Footer />
-
         <style jsx>
           {`
             .main {
               ${flex ? COLUMN : ''}
               margin-top: 6rem;
+              /* padding, not margin, so the gap always stays inside the scroll area */
+              padding-bottom: 6rem;
             }
             .login-button-container {
               position: absolute;

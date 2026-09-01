@@ -21,9 +21,8 @@ export default async function id(req, res) {
   if (req.method === 'GET') {
     if (
       req.referer ||
-      (req.headers['user-agent'].indexOf('Twitterbot') < 0 &&
-        // Slack does not honor robots.txt: https://api.slack.com/robots
-        req.headers['user-agent'].indexOf('Slackbot') < 0 &&
+      // Slack does not honor robots.txt: https://api.slack.com/robots
+      (req.headers['user-agent'].indexOf('Slackbot') < 0 &&
         req.headers['user-agent'].indexOf('Slack-ImgProxy') < 0)
     ) {
       return res.status(401).send('Unauthorized')

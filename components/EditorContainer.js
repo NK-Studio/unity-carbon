@@ -6,9 +6,8 @@ import Editor from './Editor'
 import Toasts from './Toasts'
 import { useAuth } from './AuthContext'
 
-import { THEMES } from '../lib/constants'
 import { updateRouteState } from '../lib/routing'
-import { getThemes, saveThemes, clearSettings, saveSettings } from '../lib/util'
+import { clearSettings, saveSettings } from '../lib/util'
 
 function onReset() {
   clearSettings()
@@ -36,19 +35,7 @@ function toastsReducer(curr, action) {
 }
 
 function EditorContainer(props) {
-  const [themes, updateThemes] = React.useState(THEMES)
   const user = useAuth()
-
-  React.useEffect(() => {
-    const storedThemes = getThemes(localStorage) || []
-    if (storedThemes) {
-      updateThemes(currentThemes => [...storedThemes, ...currentThemes])
-    }
-  }, [])
-
-  React.useEffect(() => {
-    saveThemes(themes.filter(({ custom }) => custom))
-  }, [themes])
 
   // XXX use context
   const [snippet, setSnippet] = React.useState(props.snippet || null)
@@ -57,21 +44,24 @@ function EditorContainer(props) {
 
   const snippetId = snippet && snippet.id
   React.useEffect(() => {
+    if (!snippetId) {
+      return
+    }
     const snippetPath = '/' + (snippetId || '')
     if (snippetPath === props.router.asPath) {
       return
     }
-    
+
     // Reloads only if the snipped.id is different from before. Otherwise returns from above.
     props.router.push(
       {
         pathname: '/[id]',
         query: { id: snippetId },
-      }, 
-      snippetPath, 
-      { 
+      },
+      snippetPath,
+      {
         shallow: true,
-        scroll: false 
+        scroll: false,
       }
     )
   }, [snippetId, props.router])
@@ -89,8 +79,6 @@ function EditorContainer(props) {
       <Toasts toasts={toasts} />
       <Editor
         {...props}
-        themes={themes}
-        updateThemes={updateThemes}
         snippet={snippet}
         setSnippet={setSnippet}
         setToasts={setToasts}

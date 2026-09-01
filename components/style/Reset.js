@@ -1,5 +1,5 @@
 import React from 'react'
-import { COLORS } from '../../lib/constants'
+import { COLORS, FONT_FAMILY } from '../../lib/constants'
 
 export default function Reset() {
   return (
@@ -141,8 +141,7 @@ export default function Reset() {
           text-rendering: optimizeLegibility;
           background: ${COLORS.BLACK};
           color: white;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Ubuntu,
-            'Helvetica Neue', sans-serif;
+          font-family: '${FONT_FAMILY}', monospace;
           font-weight: 400;
           font-style: normal;
           text-transform: initial;

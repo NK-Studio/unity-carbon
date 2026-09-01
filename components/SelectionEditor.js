@@ -5,111 +5,96 @@ import Button from './Button'
 import ColorPicker from './ColorPicker'
 import { COLORS } from '../lib/constants'
 
-function ModifierButton(props) {
-  return (
-    <Button
-      flex={0}
-      padding="0"
-      center
-      margin="0 8px 0 0"
-      style={{ borderBottom: `1px solid ${props.selected ? 'white' : 'transparent'}` }}
-      onClick={props.onClick}
-      color={props.color}
-    >
-      {props.children}
-    </Button>
-  )
-}
-
-function reducer(state, action) {
-  switch (action.type) {
-    case 'BOLD': {
-      return {
-        ...state,
-        bold: !state.bold,
-      }
-    }
-    case 'ITALICS': {
-      return {
-        ...state,
-        italics: !state.italics,
-      }
-    }
-    case 'UNDERLINE': {
-      return {
-        ...state,
-        underline: Number(state.underline + 1) % 3,
-      }
-    }
-    case 'COLOR': {
-      return {
-        ...state,
-        color: action.color,
-      }
-    }
-  }
-  throw new Error('Invalid action')
-}
+const DEFAULT_HIGHLIGHT_COLOR = '#4b4310'
+const ERROR_TEXT_COLOR = '#ED5A44'
 
 function SelectionEditor({ onChange }) {
   const [open, setOpen] = React.useState(false)
+  const [color, setColor] = React.useState(DEFAULT_HIGHLIGHT_COLOR)
 
   useKeyboardListener('Escape', () => setOpen(false))
 
-  const [state, dispatch] = React.useReducer(reducer, {
-    bold: null,
-    italics: null,
-    underline: null,
-    color: null,
-  })
-
-  React.useEffect(() => {
-    onChange(state)
-  }, [onChange, state])
+  const applyHighlight = nextColor => onChange({ backgroundColor: nextColor })
+  const applyErrorColor = () => onChange({ color: ERROR_TEXT_COLOR })
+  const removeSelectionStyles = () => onChange({ removeHighlight: true })
+  const handleColorChange = value => {
+    setColor(value.hex)
+    applyHighlight(value.hex)
+  }
 
   return (
     <div style={{ position: 'relative' }}>
-      <div className="colorizer">
-        <div className="modifier">
-          <ModifierButton selected={state.bold} onClick={() => dispatch({ type: 'BOLD' })}>
-            <b>B</b>
-          </ModifierButton>
-          <ModifierButton selected={state.italics} onClick={() => dispatch({ type: 'ITALICS' })}>
-            <i>I</i>
-          </ModifierButton>
-          <ModifierButton
-            selected={state.underline}
-            onClick={() => dispatch({ type: 'UNDERLINE' })}
-            color={state.underline === 2 ? COLORS.RED : undefined}
+      <div className="highlighter">
+        <div className="controls">
+          <Button
+            className="apply-highlight"
+            flex="0 0 auto"
+            padding="0 8px"
+            center
+            onClick={() => applyHighlight(color)}
+            title="Apply highlight"
           >
-            <u>U</u>
-          </ModifierButton>
-          <button className="color-square" onClick={() => setOpen(o => !o)} />
+            Highlight
+          </Button>
+          <Button
+            className="apply-error-color"
+            flex="0 0 auto"
+            padding="0 8px"
+            center
+            textColor={ERROR_TEXT_COLOR}
+            hoverColor={ERROR_TEXT_COLOR}
+            onClick={applyErrorColor}
+            title="Apply error text color"
+          >
+            Error
+          </Button>
+          <Button
+            className="remove-highlight"
+            flex="0 0 auto"
+            padding="0 8px"
+            center
+            onClick={removeSelectionStyles}
+            title="Remove selection styles"
+          >
+            Remove
+          </Button>
+          <button
+            type="button"
+            className="color-square"
+            aria-label="Choose highlight color"
+            aria-expanded={open}
+            onClick={() => setOpen(value => !value)}
+          />
         </div>
-        <Popout hidden={!open} pointerLeft="16px" style={{ left: 82 }}>
+        <Popout hidden={!open} pointerRight="8px" style={{ right: 0 }}>
           <div className="color-picker-container">
             <ColorPicker
-              color={state.color || COLORS.PRIMARY}
+              color={color}
               disableAlpha={true}
-              onChange={d => dispatch({ type: 'COLOR', color: d.hex })}
+              presets={['#4b4310', '#A7F3D0', '#93C5FD', '#F9A8D4', '#FDBA74']}
+              onChangePreview={handleColorChange}
             />
           </div>
         </Popout>
       </div>
       <style jsx>
         {`
-          .modifier {
-            padding: 0px 8px;
+          .controls {
+            padding: 0 8px;
             display: flex;
+            align-items: stretch;
           }
-          .colorizer b {
-            font-weight: bold;
+          .highlighter :global(button) {
+            min-width: 24px;
           }
-          .colorizer i {
-            font-style: italic;
+          .highlighter :global(.apply-highlight),
+          .highlighter :global(.apply-error-color),
+          .highlighter :global(.remove-highlight) {
+            white-space: nowrap;
           }
-          .colorizer :global(button) {
-            min-width: 20px;
+          .highlighter :global(.apply-error-color),
+          .highlighter :global(.remove-highlight) {
+            margin-left: 4px;
           }
           .color-square {
             cursor: pointer;
@@ -118,8 +103,8 @@ function SelectionEditor({ onChange }) {
             border: none;
             border-radius: 3px;
             padding: 12px;
-            margin: 4px 0 4px auto;
-            background: ${state.color || COLORS.PRIMARY};
+            margin: 4px 0 4px 4px;
+            background: ${color};
             box-shadow: ${`inset 0px 0px 0px ${open ? 2 : 1}px ${COLORS.SECONDARY}`};
           }
           .color-picker-container {

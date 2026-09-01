@@ -1,0 +1,44 @@
+{
+  "namespaces": [
+    "UnityEngine.Localization",
+    "UnityEngine.Localization.Settings",
+    "UnityEngine.Localization.Tables"
+  ],
+  "types": [
+    "AssetTable",
+    "AssetTableCollection",
+    "Locale",
+    "LocalizationSettings",
+    "LocalizedAsset",
+    "LocalizedString",
+    "StringTable",
+    "StringTableCollection"
+  ],
+  "interfaces": [],
+  "structs": [
+    "LocaleIdentifier"
+  ],
+  "enums": [],
+  "methods": [
+    "GetLocalizedString",
+    "GetLocalizedStringAsync",
+    "GetTable",
+    "GetTableAsync",
+    "RefreshString"
+  ],
+  "members": [
+    "AvailableLocales",
+    "CurrentLoadingOperation",
+    "InitializationOperation",
+    "SelectedLocale",
+    "SelectedLocaleAsync",
+    "StringChanged",
+    "TableEntryReference",
+    "TableReference"
+  ],
+  "attributes": [
+    "LocalizedAsset",
+    "LocalizedString"
+  ],
+  "enumMembers": []
+}

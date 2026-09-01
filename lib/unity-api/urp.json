@@ -1,0 +1,62 @@
+{
+  "namespaces": [
+    "UnityEngine.Rendering",
+    "UnityEngine.Rendering.RenderGraphModule",
+    "UnityEngine.Rendering.Universal"
+  ],
+  "types": [
+    "Blitter",
+    "CommandBuffer",
+    "RTHandle",
+    "RenderGraph",
+    "ScriptableRenderer",
+    "ScriptableRendererFeature",
+    "ScriptableRenderPass",
+    "UniversalAdditionalCameraData",
+    "UniversalRenderPipeline",
+    "UniversalRenderPipelineAsset",
+    "Volume",
+    "VolumeComponent",
+    "VolumeProfile",
+    "VolumeStack"
+  ],
+  "interfaces": [],
+  "structs": [
+    "RenderingData",
+    "ScriptableRenderContext"
+  ],
+  "enums": [],
+  "methods": [
+    "AddBlitPass",
+    "AddRenderPasses",
+    "BlitCameraTexture",
+    "Configure",
+    "Create",
+    "Dispose",
+    "EnqueuePass",
+    "Execute",
+    "RecordRenderGraph",
+    "SetRenderTarget"
+  ],
+  "members": [
+    "cameraColorTargetHandle",
+    "cameraData",
+    "cameraDepthTargetHandle",
+    "renderPassEvent",
+    "renderer",
+    "resourceData",
+    "volumeStack"
+  ],
+  "attributes": [
+    "DisallowMultipleRendererFeature",
+    "SupportedOnRenderPipeline"
+  ],
+  "enumMembers": [
+    "AfterRendering",
+    "AfterRenderingOpaques",
+    "AfterRenderingPostProcessing",
+    "BeforeRendering",
+    "BeforeRenderingOpaques",
+    "BeforeRenderingPostProcessing"
+  ]
+}

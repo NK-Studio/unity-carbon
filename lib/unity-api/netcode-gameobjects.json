@@ -1,0 +1,67 @@
+{
+  "namespaces": [
+    "Unity.Netcode",
+    "Unity.Netcode.Components",
+    "Unity.Netcode.Transports.UTP"
+  ],
+  "types": [
+    "NetworkBehaviour",
+    "NetworkConfig",
+    "NetworkList",
+    "NetworkManager",
+    "NetworkObject",
+    "NetworkPrefab",
+    "NetworkTransform",
+    "NetworkVariable",
+    "NetworkVariableBase",
+    "UnityTransport"
+  ],
+  "interfaces": [],
+  "structs": [
+    "ClientRpcParams",
+    "RpcParams",
+    "ServerRpcParams"
+  ],
+  "enums": [],
+  "methods": [
+    "ChangeOwnership",
+    "Despawn",
+    "DisconnectClient",
+    "IsHost",
+    "RemoveOwnership",
+    "Shutdown",
+    "Spawn",
+    "SpawnAsPlayerObject",
+    "StartClient",
+    "StartHost",
+    "StartServer"
+  ],
+  "members": [
+    "ConnectedClients",
+    "IsClient",
+    "IsListening",
+    "IsOwner",
+    "IsServer",
+    "LocalClientId",
+    "LocalTime",
+    "NetworkConfig",
+    "NetworkManager",
+    "NetworkObject",
+    "OwnerClientId",
+    "ServerTime",
+    "Singleton"
+  ],
+  "attributes": [
+    "ClientRpc",
+    "Rpc",
+    "ServerRpc"
+  ],
+  "enumMembers": [
+    "DeferLocal",
+    "Everyone",
+    "Me",
+    "NotMe",
+    "Owner",
+    "Server"
+  ]
+}

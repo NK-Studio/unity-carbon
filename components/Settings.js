@@ -3,16 +3,15 @@ import omitBy from 'lodash.omitby'
 import { useKeyboardListener } from 'actionsack'
 
 import ThemeSelect from './ThemeSelect'
-import FontSelect from './FontSelect'
+import AngleDial, { angleFromOffsets } from './AngleDial'
 import Slider from './Slider'
 import Input from './Input'
 import Toggle from './Toggle'
 import Popout, { managePopout } from './Popout'
 import Button from './Button'
-import Presets from './Presets'
 import MenuButton from './MenuButton'
-import { COLORS, DEFAULT_PRESETS, DEFAULT_SETTINGS, DEFAULT_WIDTHS } from '../lib/constants'
-import { toggle, getPresets, savePresets, generateId, fileToJSON } from '../lib/util'
+import { COLORS, DEFAULT_SETTINGS, DEFAULT_WIDTHS } from '../lib/constants'
+import { fileToJSON } from '../lib/util'
 import SettingsIcon from './svg/Settings'
 
 function KeyboardShortcut({ trigger, handle }) {
@@ -27,14 +26,38 @@ function WindowSettings({
   paddingVertical,
   dropShadow,
   dropShadowBlurRadius,
+  dropShadowOffsetX,
   dropShadowOffsetY,
   windowControls,
   widthAdjustment,
   width,
-  watermark,
   onWidthChanging,
   onWidthChanged,
 }) {
+  const offsetX = parseFloat(dropShadowOffsetX) || 0
+  const offsetY = parseFloat(dropShadowOffsetY) || 0
+  const distance = Math.round(Math.hypot(offsetX, offsetY))
+
+  // the angle is undefined at distance 0, so remember the last one the user picked
+  const [lastAngle, setLastAngle] = React.useState(() => angleFromOffsets(offsetX, offsetY))
+  const angle = distance === 0 ? lastAngle : angleFromOffsets(offsetX, offsetY)
+
+  const applyPolar = (nextAngle, nextDistance) => {
+    const radians = (nextAngle * Math.PI) / 180
+    // sub-pixel precision, otherwise the angle can't survive the round trip
+    // through the offsets it is derived from — 1° at distance 20 is 0.35px
+    const round = value => Math.round(value * 1000) / 1000
+    onChange('dropShadowOffsetX', `${round(-nextDistance * Math.cos(radians))}px`)
+    onChange('dropShadowOffsetY', `${round(nextDistance * Math.sin(radians))}px`)
+  }
+
+  const handleAngleChange = nextAngle => {
+    setLastAngle(nextAngle)
+    applyPolar(nextAngle, distance)
+  }
+
+  const handleDistanceChange = value => applyPolar(angle, parseFloat(value) || 0)
+
   return (
     <div className="settings-content">
       <ThemeSelect
@@ -63,17 +86,16 @@ function WindowSettings({
         onChange={onChange.bind(null, 'dropShadow')}
       />
       {dropShadow && (
-        <div className="row drop-shadow-options">
-          <Slider
-            label="(offset-y)"
-            value={dropShadowOffsetY}
-            onChange={onChange.bind(null, 'dropShadowOffsetY')}
-          />
-          <Slider
-            label="(blur-radius)"
-            value={dropShadowBlurRadius}
-            onChange={onChange.bind(null, 'dropShadowBlurRadius')}
-          />
+        <div className="drop-shadow-options">
+          <AngleDial label="(angle)" angle={angle} onChange={handleAngleChange} />
+          <div className="row">
+            <Slider label="(distance)" value={distance} onChange={handleDistanceChange} />
+            <Slider
+              label="(blur-radius)"
+              value={dropShadowBlurRadius}
+              onChange={onChange.bind(null, 'dropShadowBlurRadius')}
+            />
+          </div>
         </div>
       )}
       <Toggle
@@ -94,7 +116,6 @@ function WindowSettings({
           />
         </div>
       )}
-      <Toggle label="Watermark" enabled={watermark} onChange={onChange.bind(null, 'watermark')} />
       <style jsx>
         {`
           .width-row {
@@ -122,8 +143,6 @@ function WindowSettings({
 
 function EditorSettings({
   onChange,
-  onUpload,
-  font,
   size,
   lineHeight,
   lineNumbers,
@@ -134,17 +153,13 @@ function EditorSettings({
 }) {
   return (
     <div className="settings-content">
-      <FontSelect
-        selected={font}
-        onUpload={onUpload}
-        onChange={onChange.bind(null, 'fontFamily')}
-      />
       <Slider
         label="Size"
         value={size}
         minValue={10}
-        maxValue={18}
+        maxValue={40}
         step={0.5}
+        editable
         onChange={onChange.bind(null, 'fontSize')}
         onMouseDown={onWidthChanging}
         onMouseUp={onWidthChanged}
@@ -192,7 +207,7 @@ function EditorSettings({
 
 const resetButtonStyle = { borderTop: `1px solid ${COLORS.SECONDARY}` }
 
-function MiscSettings({ format, reset, applyPreset, settings }) {
+function MiscSettings({ format, reset, applyConfig, settings }) {
   const input = React.useRef(null)
   let download
   try {
@@ -211,7 +226,7 @@ function MiscSettings({ format, reset, applyPreset, settings }) {
           onChange={async e => {
             const json = await fileToJSON(e.target.files[0])
             if (json) {
-              applyPreset(json)
+              applyConfig(json)
             }
           }}
         />
@@ -258,29 +273,17 @@ const settingButtonStyle = {
 }
 
 const invalidSetting = (v, k) =>
-  // Allow highlights in presets and config exports
+  // Allow highlights in config exports
   !(Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, k) || k === 'highlights')
 
 class Settings extends React.PureComponent {
   state = {
-    presets: DEFAULT_PRESETS,
     selectedMenu: 'Window',
-    showPresets: true,
-    previousSettings: null,
     widthChanging: false,
   }
 
   settingsRef = React.createRef()
   menuRef = React.createRef()
-
-  componentDidMount() {
-    const storedPresets = getPresets(localStorage) || []
-    this.setState(({ presets }) => ({
-      presets: [...storedPresets, ...presets],
-    }))
-  }
-
-  togglePresets = () => this.setState(toggle('showPresets'))
 
   selectMenu = selectedMenu => () => this.setState({ selectedMenu })
 
@@ -294,7 +297,6 @@ class Settings extends React.PureComponent {
 
   handleChange = (key, value) => {
     this.props.onChange(key, value)
-    this.setState({ previousSettings: null })
   }
 
   handleOpenAndFocus = () => {
@@ -306,65 +308,9 @@ class Settings extends React.PureComponent {
 
   handleReset = () => {
     this.props.resetDefaultSettings()
-    this.setState({ previousSettings: null })
-  }
-
-  handleFontUpload = (id, url) => {
-    this.props.onChange('fontFamily', id)
-    this.props.onChange('fontUrl', url)
-    this.props.toggleVisibility()
   }
 
   getSettingsFromProps = () => omitBy(this.props, invalidSetting)
-
-  applyPreset = preset => {
-    const previousSettings = this.getSettingsFromProps()
-
-    this.props.applyPreset(preset)
-
-    this.setState({ previousSettings })
-  }
-
-  undoPreset = () => {
-    this.props.applyPreset({ ...this.state.previousSettings, id: null })
-    this.setState({ previousSettings: null })
-  }
-
-  removePreset = id => {
-    if (this.props.preset === id) {
-      this.props.onChange('preset', null)
-      this.setState({ previousSettings: null })
-    }
-    this.setState(
-      ({ presets }) => ({ presets: presets.filter(p => p.id !== id) }),
-      this.savePresets
-    )
-  }
-
-  createPreset = async () => {
-    const newPreset = this.getSettingsFromProps()
-
-    newPreset.id = `preset:${generateId()}`
-    newPreset.custom = true
-
-    newPreset.icon = await this.props.getCarbonImage({
-      format: 'png',
-      squared: true,
-      exportSize: 1,
-    })
-
-    this.props.onChange('preset', newPreset.id)
-
-    this.setState(
-      ({ presets }) => ({
-        previousSettings: null,
-        presets: [newPreset, ...presets],
-      }),
-      this.savePresets
-    )
-  }
-
-  savePresets = () => savePresets(this.state.presets.filter(p => p.custom))
 
   renderContent = () => {
     switch (this.state.selectedMenu) {
@@ -379,21 +325,19 @@ class Settings extends React.PureComponent {
             paddingVertical={this.props.paddingVertical}
             dropShadow={this.props.dropShadow}
             dropShadowBlurRadius={this.props.dropShadowBlurRadius}
+            dropShadowOffsetX={this.props.dropShadowOffsetX}
             dropShadowOffsetY={this.props.dropShadowOffsetY}
             windowControls={this.props.windowControls}
             widthAdjustment={this.props.widthAdjustment}
             width={this.props.width}
-            watermark={this.props.watermark}
           />
         )
       case 'Editor':
         return (
           <EditorSettings
             onChange={this.handleChange}
-            onUpload={this.handleFontUpload}
             onWidthChanging={this.handleWidthChanging}
             onWidthChanged={this.handleWidthChanged}
-            font={this.props.fontFamily}
             size={this.props.fontSize}
             lineHeight={this.props.lineHeight}
             lineNumbers={this.props.lineNumbers}
@@ -407,7 +351,7 @@ class Settings extends React.PureComponent {
           <MiscSettings
             format={this.props.format}
             reset={this.handleReset}
-            applyPreset={this.props.applyPreset}
+            applyConfig={this.props.applyConfig}
             settings={settings}
           />
         )
@@ -418,8 +362,8 @@ class Settings extends React.PureComponent {
   }
 
   render() {
-    const { selectedMenu, showPresets, presets, previousSettings, widthChanging } = this.state
-    const { preset, isVisible, toggleVisibility } = this.props
+    const { selectedMenu, widthChanging } = this.state
+    const { isVisible, toggleVisibility } = this.props
 
     return (
       <div className="settings-container" ref={this.settingsRef}>
@@ -445,17 +389,6 @@ class Settings extends React.PureComponent {
             left: widthChanging ? this.settingPosition.left : 'initial',
           }}
         >
-          <Presets
-            show={showPresets}
-            presets={presets}
-            selected={preset}
-            toggle={this.togglePresets}
-            apply={this.applyPreset}
-            undo={this.undoPreset}
-            remove={this.removePreset}
-            create={this.createPreset}
-            applied={!!previousSettings}
-          />
           <div className="settings-bottom">
             <div className="settings-menu" ref={this.menuRef} tabIndex={-1}>
               <MenuButton name="Window" select={this.selectMenu} selected={selectedMenu} />

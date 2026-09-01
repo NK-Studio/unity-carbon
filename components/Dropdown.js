@@ -199,7 +199,7 @@ const SelectedItem = ({
     <span
       {...getToggleButtonProps({ tabIndex: 0 })}
       className={`dropdown-display ${isOpen ? 'is-open' : ''}`}
-      data-cy="theme-selector-button"
+      data-cy="dropdown-selector-button"
     >
       <input
         {...getInputProps({ placeholder: children, id: `downshift-input-${children}`, disabled })}

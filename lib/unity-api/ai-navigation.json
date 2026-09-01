@@ -1,0 +1,52 @@
+{
+  "namespaces": [
+    "Unity.AI.Navigation",
+    "UnityEngine.AI"
+  ],
+  "types": [
+    "NavMesh",
+    "NavMeshAgent",
+    "NavMeshData",
+    "NavMeshLink",
+    "NavMeshModifier",
+    "NavMeshModifierVolume",
+    "NavMeshObstacle",
+    "NavMeshPath",
+    "NavMeshSurface"
+  ],
+  "interfaces": [],
+  "structs": [
+    "NavMeshBuildSettings",
+    "NavMeshHit"
+  ],
+  "enums": [],
+  "methods": [
+    "BuildNavMesh",
+    "CalculatePath",
+    "Move",
+    "RemoveData",
+    "SamplePosition",
+    "SetDestination",
+    "Warp"
+  ],
+  "members": [
+    "agentTypeID",
+    "areaMask",
+    "carving",
+    "desiredVelocity",
+    "destination",
+    "hasPath",
+    "isOnNavMesh",
+    "isStopped",
+    "pathPending",
+    "remainingDistance",
+    "stoppingDistance"
+  ],
+  "attributes": [],
+  "enumMembers": [
+    "CarveOnlyStationary",
+    "Complete",
+    "Invalid",
+    "Partial"
+  ]
+}

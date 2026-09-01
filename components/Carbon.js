@@ -2,12 +2,13 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import dynamic from 'next/dynamic'
 import hljs from 'highlight.js/lib/core'
-import javascript from 'highlight.js/lib/languages/javascript'
 import debounce from 'lodash.debounce'
 import ms from 'ms'
-import { Controlled as CodeMirror } from 'react-codemirror2'
 
-hljs.registerLanguage('javascript', javascript)
+import highlightLanguages from '../lib/highlight-languages'
+import { isUnityCSharp } from '../lib/unity-api/detect'
+
+highlightLanguages.forEach(([name, language]) => hljs.registerLanguage(name, language))
 
 import { Spinner } from './Spinner'
 import WindowControls from './WindowControls'
@@ -15,38 +16,63 @@ import WidthHandler from './WidthHandler'
 
 import {
   COLORS,
-  LANGUAGES,
   LANGUAGE_MODE_HASH,
   LANGUAGE_NAME_HASH,
   LANGUAGE_MIME_HASH,
   DEFAULT_SETTINGS,
-  THEMES_HASH,
+  DEFAULT_THEME,
 } from '../lib/constants'
 
 const SelectionEditor = dynamic(() => import('./SelectionEditor'), {
   loading: () => null,
 })
-const Watermark = dynamic(() => import('./svg/Watermark'), {
+const CodeMirror = dynamic(() => import('react-codemirror2').then(module => module.Controlled), {
+  ssr: false,
   loading: () => null,
 })
+const SELECTION_HIGHLIGHT_CLASS = 'selection-highlight'
+const SELECTION_ERROR_CLASS = 'selection-error'
 
 function searchLanguage(l) {
   return LANGUAGE_NAME_HASH[l] || LANGUAGE_MODE_HASH[l] || LANGUAGE_MIME_HASH[l]
 }
 
 function noop() {}
-function getUnderline(underline) {
-  switch (underline) {
-    case 1:
-      return 'underline'
-    case 2:
-      /**
-       * Chrome will only round to the nearest wave, causing visual inconsistencies
-       * https://stackoverflow.com/questions/57559588/how-to-make-the-wavy-underline-extend-cover-all-the-characters-in-chrome
-       */
-      return `${COLORS.RED} wavy underline; text-decoration-skip-ink: none`
-  }
-  return 'initial'
+
+function comparePositions(a, b) {
+  return a.line - b.line || a.ch - b.ch
+}
+
+function markSelection(doc, from, to, className, css) {
+  return doc.markText(from, to, { className, css })
+}
+
+function removeSelectionStyles(doc, selection, className) {
+  doc
+    .findMarks(
+      selection.from,
+      selection.to,
+      marker =>
+        (!className &&
+          [SELECTION_HIGHLIGHT_CLASS, SELECTION_ERROR_CLASS].includes(marker.className)) ||
+        marker.className === className
+    )
+    .forEach(marker => {
+      const range = marker.find()
+      const css = marker.css
+      const markerClassName = marker.className
+
+      marker.clear()
+      if (!range) {
+        return
+      }
+      if (comparePositions(range.from, selection.from) < 0) {
+        markSelection(doc, range.from, selection.from, markerClassName, css)
+      }
+      if (comparePositions(range.to, selection.to) > 0) {
+        markSelection(doc, selection.to, range.to, markerClassName, css)
+      }
+    })
 }
 
 class Carbon extends React.PureComponent {
@@ -66,6 +92,8 @@ class Carbon extends React.PureComponent {
         if (languageMode) {
           return languageMode.mime || languageMode.mode
         }
+
+        return 'text'
       }
 
       const languageMode = searchLanguage(language)
@@ -74,7 +102,7 @@ class Carbon extends React.PureComponent {
         return languageMode.mime || languageMode.mode
       }
 
-      return language
+      return 'text'
     },
     ms('300ms'),
     {
@@ -94,6 +122,7 @@ class Carbon extends React.PureComponent {
       return
     }
 
+    this.editor = ed
     const selection = data.ranges[0]
     if (
       selection.head.line === selection.anchor.line &&
@@ -126,20 +155,32 @@ class Carbon extends React.PureComponent {
 
   onSelectionChange = changes => {
     if (this.state.selectionAt) {
-      const css = [
-        changes.bold != null && `font-weight: ${changes.bold ? 'bold' : 'initial'}`,
-        changes.italics != null && `font-style: ${changes.italics ? 'italic' : 'initial'}`,
-        changes.underline != null && `text-decoration: ${getUnderline(changes.underline)}`,
-        changes.color != null && `color: ${changes.color} !important`,
-      ]
-        .filter(Boolean)
-        .join('; ')
+      const editor = this.editor || this.props.editorRef?.current?.editor
+      if (!editor || !editor.doc) {
+        return
+      }
 
-      if (css) {
-        this.props.editorRef.current.editor.doc.markText(
+      if (changes.removeHighlight) {
+        removeSelectionStyles(editor.doc, this.state.selectionAt)
+      } else if (changes.backgroundColor != null) {
+        removeSelectionStyles(editor.doc, this.state.selectionAt, SELECTION_HIGHLIGHT_CLASS)
+        const css = `background-color: ${changes.backgroundColor} !important`
+        markSelection(
+          editor.doc,
           this.state.selectionAt.from,
           this.state.selectionAt.to,
-          { css }
+          SELECTION_HIGHLIGHT_CLASS,
+          css
+        )
+      } else if (changes.color != null) {
+        removeSelectionStyles(editor.doc, this.state.selectionAt, SELECTION_ERROR_CLASS)
+        const css = `color: ${changes.color} !important`
+        markSelection(
+          editor.doc,
+          this.state.selectionAt.from,
+          this.state.selectionAt.to,
+          SELECTION_ERROR_CLASS,
+          css
         )
       }
     }
@@ -148,17 +189,23 @@ class Carbon extends React.PureComponent {
   render() {
     const config = { ...DEFAULT_SETTINGS, ...this.props.config }
 
-    const languageMode = this.handleLanguageChange(
-      this.props.children,
-      config.language && config.language.toLowerCase()
-    )
+    const requestedLanguage = config.language && config.language.toLowerCase()
+    const unityCSharp = isUnityCSharp(this.props.children)
+    const resolvedLanguageMode =
+      requestedLanguage === 'auto' && unityCSharp
+        ? 'text/x-csharp'
+        : this.handleLanguageChange(this.props.children, requestedLanguage)
+    const languageMode =
+      resolvedLanguageMode === 'text/x-csharp' && unityCSharp
+        ? 'unity-csharp'
+        : resolvedLanguageMode
 
     const options = {
       screenReaderLabel: 'Code editor',
       lineNumbers: config.lineNumbers,
       firstLineNumber: config.firstLineNumber,
       mode: languageMode || 'plaintext',
-      theme: config.theme,
+      theme: DEFAULT_SETTINGS.theme,
       scrollbarStyle: null,
       viewportMargin: Infinity,
       lineWrapping: true,
@@ -169,12 +216,13 @@ class Carbon extends React.PureComponent {
       readOnly: this.props.readOnly,
       showInvisibles: config.hiddenCharacters,
       autoCloseBrackets: true,
+      autoCloseXmlDocComments: ['text/x-csharp', 'unity-csharp'].includes(languageMode),
     }
     const backgroundImage =
       (this.props.config.backgroundImage && this.props.config.backgroundImageSelection) ||
       this.props.config.backgroundImage
 
-    const themeConfig = this.props.theme || THEMES_HASH[config.theme]
+    const themeConfig = this.props.theme || DEFAULT_THEME
 
     const light = themeConfig && themeConfig.light
 
@@ -218,7 +266,6 @@ class Carbon extends React.PureComponent {
                 onGutterClick={this.props.onGutterClick}
                 onSelection={this.onSelection}
               />
-              {config.watermark && <Watermark light={light} />}
               <div className="container-bg">
                 <div className="white eliminateOnRender" />
                 <div className="alpha eliminateOnRender" />
@@ -250,14 +297,6 @@ class Carbon extends React.PureComponent {
               max-width: ${config.widthAdjustment ? '1024px' : 'none'};
               ${config.widthAdjustment ? '' : `width: ${config.width}px;`}
               padding: ${config.paddingVertical} ${config.paddingHorizontal};
-            }
-
-            .container :global(.watermark) {
-              fill-opacity: 0.75;
-              position: absolute;
-              z-index: 2;
-              bottom: calc(${config.paddingVertical} + 16px);
-              right: calc(${config.paddingHorizontal} + 16px);
             }
 
             .container .container-bg {
@@ -312,7 +351,9 @@ class Carbon extends React.PureComponent {
               z-index: 1;
               border-radius: 5px;
               ${config.dropShadow
-                ? `box-shadow: 0 ${config.dropShadowOffsetY} ${config.dropShadowBlurRadius} rgba(0, 0, 0, 0.55)`
+                ? `box-shadow: ${config.dropShadowOffsetX || '0px'} ${config.dropShadowOffsetY} ${
+                    config.dropShadowBlurRadius
+                  } rgba(0, 0, 0, 0.55)`
                 : ''};
             }
 
@@ -322,9 +363,9 @@ class Carbon extends React.PureComponent {
               padding: 18px 18px;
               padding-left: 12px;
               ${config.lineNumbers ? 'padding-left: 12px;' : ''} border-radius: 5px;
-              font-family: ${config.fontFamily}, monospace !important;
+              font-family: '${DEFAULT_SETTINGS.fontFamily}', monospace !important;
               font-size: ${config.fontSize};
-              line-height: ${config.lineHeight};
+              line-height: ${config.lineHeight} !important;
               font-variant-ligatures: contextual;
               font-feature-settings: 'calt' 1;
               user-select: none;
@@ -349,6 +390,8 @@ class Carbon extends React.PureComponent {
 
             .container :global(.CodeMirror-linenumber) {
               cursor: pointer;
+              padding-right: 16px;
+              line-height: ${config.lineHeight} !important;
             }
 
             .container :global(.CodeMirror-cursor) {
@@ -388,28 +431,17 @@ function useModeLoader() {
     if (!modesLoaded) {
       // Load Codemirror add-ons
       require('../lib/custom/autoCloseBrackets')
-      // Load Codemirror modes
-      LANGUAGES.filter(
-        language => language.mode && language.mode !== 'auto' && language.mode !== 'text'
-      ).forEach(language => {
-        language.custom
-          ? require(`../lib/custom/modes/${language.mode}`)
-          : require(`codemirror/mode/${language.mode}/${language.mode}`)
-      })
+      require('../lib/custom/autoCloseXmlDocComments')
+      // Static requires keep removed languages out of the client bundle.
+      require('codemirror/mode/clike/clike')
+      require('codemirror/mode/css/css')
+      require('codemirror/mode/xml/xml')
+      require('codemirror/mode/javascript/javascript')
+      require('codemirror/mode/htmlmixed/htmlmixed')
+      require('codemirror/mode/jsx/jsx')
+      require('codemirror/mode/swift/swift')
+      require('../lib/custom/modes/unity-csharp')
       modesLoaded = true
-    }
-  }, [])
-}
-
-let highLightsLoaded = false
-function useHighlightLoader() {
-  React.useEffect(() => {
-    if (!highLightsLoaded) {
-      import('../lib/highlight-languages')
-        .then(res => res.default.map(config => hljs.registerLanguage(config[0], config[1])))
-        .then(() => {
-          highLightsLoaded = true
-        })
     }
   }, [])
 }
@@ -461,8 +493,9 @@ function useSelectedLines(props, editorRef) {
   })
 
   React.useEffect(() => {
-    if (editorRef.current && Object.keys(state.selected).length > 0) {
-      editorRef.current.editor.display.view.forEach((line, i) => {
+    const editor = editorRef.current?.editor
+    if (editor?.display?.view && Object.keys(state.selected).length > 0) {
+      editor.display.view.forEach((line, i) => {
         if (line.text) {
           line.text.style.opacity = state.selected[i] === true ? 1 : 0.5
         }
@@ -495,9 +528,8 @@ function useShowInvisiblesLoader() {
 
 function CarbonContainer(props, ref) {
   useModeLoader()
-  useHighlightLoader()
   useShowInvisiblesLoader()
-  const editorRef = React.createRef()
+  const editorRef = React.useRef(null)
   const onGutterClick = useSelectedLines(props, editorRef)
 
   return <Carbon {...props} innerRef={ref} editorRef={editorRef} onGutterClick={onGutterClick} />

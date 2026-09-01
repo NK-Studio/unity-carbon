@@ -3183,34 +3183,10 @@ code-point-at@^1.0.0:
   resolved "https://registry.yarnpkg.com/code-point-at/-/code-point-at-1.1.0.tgz#0d070b4d043a5bea33a2f1a40e2edb3d9a4ccf77"
   integrity sha512-RpAVKQA5T63xEj6/giIbUEtZwJ4UFIc3ZtvEkiaUERylqe8xb5IvqcgOurZLahv93CLKfxcw5YI+DZcUBRyLXA==
 
-codemirror-graphql@^1.3.0:
-  version "1.3.1"
-  resolved "https://registry.yarnpkg.com/codemirror-graphql/-/codemirror-graphql-1.3.1.tgz#c852b12b6909783681a5e37d61d1627a78f9c7a6"
-  integrity sha512-jlLwTARoMeuYLR5sQYbh5uYewIoYUYAn+0lOIKXpaHudk9X1rOrP/WtOqfDza1ETnyfnlpLidBnpieIMKktriQ==
-  dependencies:
-    graphql-language-service "^5.0.5"
-
-codemirror-mode-elixir@^1.1.2:
-  version "1.1.2"
-  resolved "https://registry.yarnpkg.com/codemirror-mode-elixir/-/codemirror-mode-elixir-1.1.2.tgz#61227208d2684d928500af6934e4b9c995fb0960"
-  integrity sha512-1oIuRVHyUhLv0Za9sEIsI7urAj06EohwO/yVj10bg7aHnimHQ964Wk3uuoPH0Yn8L38EkOd+SwULYpDiCQtoTA==
-
-codemirror-solidity@^0.2.3:
-  version "0.2.5"
-  resolved "https://registry.yarnpkg.com/codemirror-solidity/-/codemirror-solidity-0.2.5.tgz#d2ae56e80e57947b193b9bb9e0a1d63b7020a50f"
-  integrity sha512-h0EQ/tYBskFdZLFmm0jhBIh0oispPTYlNvU5V3Qlib2LU28cR8xb/4Wk97KrfTR5omoii0m9v9mTOq9pmQRwiA==
-  dependencies:
-    codemirror "^5.56.0"
-
 codemirror@5.65.5:
   version "5.65.5"
   resolved "https://registry.yarnpkg.com/codemirror/-/codemirror-5.65.5.tgz#f38f0e29945c3464df0c81f946fcd9a063fa2024"
   integrity sha512-HNyhvGLnYz5c+kIsB9QKVitiZUevha3ovbIYaQiGzKo7ECSL/elWD9RXt3JgNr0NdnyqE9/Rc/7uLfkJQL638w==
-
-codemirror@^5.56.0:
-  version "5.65.1"
-  resolved "https://registry.yarnpkg.com/codemirror/-/codemirror-5.65.1.tgz#5988a812c974c467f964bcc1a00c944e373de502"
-  integrity sha512-s6aac+DD+4O2u1aBmdxhB7yz2XU7tG3snOyQ05Kxifahz7hoxnfxIRHxiCSEv3TUC38dIVH8G+lZH9UWSfGQxA==
 
 color-convert@^1.9.0:
   version "1.9.3"
@@ -4840,19 +4816,6 @@ graceful-fs@^4.1.2, graceful-fs@^4.1.6, graceful-fs@^4.2.0, graceful-fs@^4.2.9:
   resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.2.10.tgz#147d3a006da4ca3ce14728c7aefc287c367d7a6c"
   integrity sha512-9ByhssR2fPVsNZj478qUUbKfmL0+t5BDVyjShtyZZLiK7ZDAArFFfopyOTj0M05wE2tJPisA4iTnnXl2YoPvOA==
 
-graphql-language-service@^5.0.5:
-  version "5.0.5"
-  resolved "https://registry.yarnpkg.com/graphql-language-service/-/graphql-language-service-5.0.5.tgz#894c08bee50070c97cc53ae514847aeef41bc0ac"
-  integrity sha512-hekBLI73r6ghShWrIMJ7Pe4Z+yJrda/U+kLenNJLNswuCrR0XfFOv5pNtnSXLcjFZkQfY1bwGV0D8IVKZEOW5Q==
-  dependencies:
-    nullthrows "^1.0.0"
-    vscode-languageserver-types "^3.15.1"
-
-graphql@^16.8.1:
-  version "16.8.1"
-  resolved "https://registry.yarnpkg.com/graphql/-/graphql-16.8.1.tgz#1930a965bef1170603702acdb68aedd3f3cf6f07"
-  integrity sha512-59LZHPdGZVh695Ud9lRzPBVTtlX9ZCV150Er2W43ro37wVof0ctenSaskPPjN7lVTIN8mSZt8PHUNKZuNQUuxw==
-
 gzip-size@^6.0.0:
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/gzip-size/-/gzip-size-6.0.0.tgz#065367fd50c239c0671cbcbad5be3e2eeb10e462"
@@ -6278,11 +6241,6 @@ npmlog@^5.0.1:
     console-control-strings "^1.1.0"
     gauge "^3.0.0"
     set-blocking "^2.0.0"
-
-nullthrows@^1.0.0:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/nullthrows/-/nullthrows-1.1.1.tgz#7818258843856ae971eae4208ad7d7eb19a431b1"
-  integrity sha512-2vPPEi+Z7WqML2jZYddDIfy5Dqb0r2fze2zTxNNknZaFpVHU3mFB3R+DWeJWGVx0ecvttSGlJTI+WG+8Z4cDWw==
 
 number-is-nan@^1.0.0:
   version "1.0.1"
@@ -8272,11 +8230,6 @@ vm2@^3.9.8:
   dependencies:
     acorn "^8.7.0"
     acorn-walk "^8.2.0"
-
-vscode-languageserver-types@^3.15.1:
-  version "3.17.1"
-  resolved "https://registry.yarnpkg.com/vscode-languageserver-types/-/vscode-languageserver-types-3.17.1.tgz#c2d87fa7784f8cac389deb3ff1e2d9a7bef07e16"
-  integrity sha512-K3HqVRPElLZVVPtMeKlsyL9aK0GxGQpvtAUTfX4k7+iJ4mc1M+JM+zQwkgGy2LzY0f0IAafe8MKqIkJrxfGGjQ==
 
 w3c-hr-time@^1.0.2:
   version "1.0.2"

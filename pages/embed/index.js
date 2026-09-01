@@ -5,11 +5,11 @@ import { withRouter } from 'next/router'
 
 // Ours
 import ApiContext from '../../components/ApiContext'
-import { StylesheetLink, CodeMirrorLink, MetaTags, HIGHLIGHTS_ONLY } from '../../components/Meta'
+import { CodeMirrorLink, MetaTags } from '../../components/Meta'
 import Font from '../../components/style/Font'
 import Carbon from '../../components/Carbon'
 import GlobalHighlights from '../../components/Themes/GlobalHighlights'
-import { DEFAULT_CODE, DEFAULT_SETTINGS, THEMES_HASH } from '../../lib/constants'
+import { DEFAULT_CODE, DEFAULT_SETTINGS, DEFAULT_THEME } from '../../lib/constants'
 import { getRouteState } from '../../lib/routing'
 
 const Page = props => (
@@ -18,13 +18,10 @@ const Page = props => (
       <title>Carbon Embeds</title>
     </Head>
     <MetaTags />
-    <StylesheetLink theme={props.theme} />
     <CodeMirrorLink />
     <Font />
     {props.children}
-    {HIGHLIGHTS_ONLY.includes(props.theme) && (
-      <GlobalHighlights highlights={THEMES_HASH[props.theme].highlights} />
-    )}
+    <GlobalHighlights highlights={DEFAULT_THEME.highlights} />
     <style jsx global>
       {`
         html,
@@ -57,6 +54,10 @@ class Embed extends React.Component {
       {
         ...this.props.snippet,
         ...queryState,
+        theme: DEFAULT_THEME.id,
+        highlights: null,
+        fontFamily: DEFAULT_SETTINGS.fontFamily,
+        fontUrl: null,
         copyable: queryState.copy !== false,
         readOnly: queryState.readonly !== false,
         mounted: true,
@@ -97,12 +98,12 @@ class Embed extends React.Component {
 
   render() {
     return (
-      <Page theme={this.state.theme}>
+      <Page>
         <div hidden={!this.state.mounted}>
           <Carbon
             key={this.state.mounted}
             ref={this.ref}
-            config={this.state}
+            config={{ ...this.state, theme: DEFAULT_THEME.id, highlights: null }}
             readOnly={this.state.readOnly}
             copyable={this.state.copyable}
             onChange={this.updateCode}

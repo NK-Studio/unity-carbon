@@ -1,9 +1,9 @@
 {
-  "name": "Carbon",
-  "short_name": "Carbon",
+  "name": "NKStudio",
+  "short_name": "NKStudio",
   "background_color": "#121212",
   "theme_color": "#121212",
-  "description": "Carbon is the easiest way to create and share beautiful images of your source code.",
+  "description": "유니티 소스 코드를 아름다운 이미지로 만들고 공유하는 가장 쉬운 방법",
   "display": "standalone",
   "start_url": "/",
   "icons": [

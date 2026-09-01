@@ -1,17 +1,13 @@
 import React from 'react'
-import Logo from './svg/Logo'
 
 const Header = ({ enableHeroText }) => (
   <header role="banner" className="mb4">
     <div className="header-content">
-      <a id="link-home" href="/" aria-label="Home">
-        <Logo />
-      </a>
       {enableHeroText ? (
-        <h2 className="mt3">
-          Create and share beautiful images of your source code.
+        <h2 className="mt0">
+          소스 코드를 아름다운 이미지로 만들고 공유해 보세요.
           <br />
-          Start typing or drop a file into the text area to get started.
+          아래 편집기에 코드를 입력하거나 파일을 끌어다 놓으면 시작됩니다.
         </h2>
       ) : null}
     </div>
@@ -21,11 +17,6 @@ const Header = ({ enableHeroText }) => (
           display: flex;
           flex-direction: column;
           align-items: center;
-        }
-
-        .header-content a {
-          height: 64px;
-          max-width: 96vw;
         }
 
         h2 {

@@ -1,0 +1,49 @@
+{
+  "namespaces": [
+    "UnityEngine.AddressableAssets",
+    "UnityEngine.ResourceManagement",
+    "UnityEngine.ResourceManagement.AsyncOperations"
+  ],
+  "types": [
+    "Addressables",
+    "AssetLabelReference",
+    "AssetReference",
+    "AssetReferenceGameObject"
+  ],
+  "interfaces": [
+    "IResourceLocation"
+  ],
+  "structs": [
+    "AsyncOperationHandle"
+  ],
+  "enums": [
+    "AsyncOperationStatus"
+  ],
+  "methods": [
+    "DownloadDependenciesAsync",
+    "GetDownloadSizeAsync",
+    "InstantiateAsync",
+    "LoadAssetAsync",
+    "LoadAssetsAsync",
+    "LoadResourceLocationsAsync",
+    "Release",
+    "ReleaseInstance"
+  ],
+  "members": [
+    "AssetGUID",
+    "IsDone",
+    "OperationException",
+    "PercentComplete",
+    "Result",
+    "RuntimeKey",
+    "Status"
+  ],
+  "attributes": [
+    "AssetReferenceUILabelRestriction"
+  ],
+  "enumMembers": [
+    "Failed",
+    "None",
+    "Succeeded"
+  ]
+}

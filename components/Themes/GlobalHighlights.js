@@ -32,6 +32,14 @@ export default function GlobalHighlights({ highlights }) {
         :global(.cm-keyword) {
           color: ${highlights.keyword} !important;
         }
+        /* clike marks built-in types (float, void, int); Rider colors those like keywords */
+        :global(.cm-type) {
+          color: ${highlights.type || highlights.keyword} !important;
+        }
+        /* null, true, false */
+        :global(.cm-atom) {
+          color: ${highlights.atom || highlights.keyword} !important;
+        }
         :global(.cm-property) {
           color: ${highlights.property} !important;
         }
@@ -53,31 +61,37 @@ export default function GlobalHighlights({ highlights }) {
         :global(.cm-builtin) {
           color: ${highlights.builtin} !important;
         }
-
-        :global(.cm-s-dracula .CodeMirror-cursor) {
-          border-left: solid 2px #159588 !important;
+        :global(.cm-unity-type),
+        :global(.cm-unity-declared-type),
+        :global(.cm-unity-namespace) {
+          color: ${highlights.unityType || '#C191FF'} !important;
+        }
+        :global(.cm-unity-interface) {
+          color: ${highlights.unityInterface || '#B18CFA'} !important;
+        }
+        :global(.cm-unity-delegate) {
+          color: ${highlights.unityDelegate || '#D7BBFC'} !important;
+        }
+        :global(.cm-unity-method) {
+          color: ${highlights.unityMethod || '#59C093'} !important;
+        }
+        :global(.cm-unity-event) {
+          color: ${highlights.unityEvent || '#DE90B7'} !important;
+        }
+        :global(.cm-unity-member) {
+          color: ${highlights.unityMember || '#66C3CC'} !important;
+        }
+        /* Rider paints value types apart from classes */
+        :global(.cm-unity-struct),
+        :global(.cm-unity-enum) {
+          color: ${highlights.unityValueType || '#D7BBFC'} !important;
+        }
+        :global(.cm-unity-enum-member) {
+          color: ${highlights.unityEnumMember || '#6FB9C4'} !important;
         }
 
-        :global(.cm-s-vscode .CodeMirror-cursor) {
-          border-left: solid 2px #bebebe !important;
-        }
-
-        :global(.cm-s-solarized) {
-          box-shadow: none !important;
-        }
-
-        :global(.cm-s-solarized.cm-s-light) {
-          text-shadow: #eee8d5 0 1px !important;
-        }
-
-        :global(.cm-s-solarized.cm-s-light .CodeMirror-linenumber),
-        :global(.cm-s-solarized.cm-s-light .CodeMirror-linenumbers) {
-          background-color: #fdf6e3 !important;
-        }
-
-        :global(.cm-s-solarized.cm-s-dark .CodeMirror-linenumber),
-        :global(.cm-s-solarized.cm-s-dark .CodeMirror-linenumbers) {
-          background-color: #002b36 !important;
+        :global(.cm-s-islands-dark .CodeMirror-cursor) {
+          border-left: solid 2px #f0f0f0 !important;
         }
       `}
     </style>

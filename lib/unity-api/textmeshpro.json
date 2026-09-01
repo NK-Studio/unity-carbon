@@ -1,0 +1,60 @@
+{
+  "namespaces": [
+    "TMPro"
+  ],
+  "types": [
+    "TMP_Character",
+    "TMP_Dropdown",
+    "TMP_FontAsset",
+    "TMP_InputField",
+    "TMP_Settings",
+    "TMP_SpriteAsset",
+    "TMP_Text",
+    "TMP_TextInfo",
+    "TextMeshPro",
+    "TextMeshProUGUI"
+  ],
+  "interfaces": [],
+  "structs": [
+    "TMP_LinkInfo",
+    "TMP_MeshInfo"
+  ],
+  "enums": [],
+  "methods": [
+    "ForceMeshUpdate",
+    "GetPreferredValues",
+    "SetCharArray",
+    "SetText"
+  ],
+  "members": [
+    "alignment",
+    "autoSizeTextContainer",
+    "color",
+    "enableAutoSizing",
+    "font",
+    "fontSize",
+    "fontStyle",
+    "isTextOverflowing",
+    "maxVisibleCharacters",
+    "overflowMode",
+    "preferredHeight",
+    "preferredWidth",
+    "text",
+    "textInfo"
+  ],
+  "attributes": [],
+  "enumMembers": [
+    "Baseline",
+    "Bottom",
+    "Center",
+    "Ellipsis",
+    "Flush",
+    "Justified",
+    "Left",
+    "Midline",
+    "Overflow",
+    "Right",
+    "Top",
+    "Truncate"
+  ]
+}
