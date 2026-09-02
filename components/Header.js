@@ -1,39 +1,44 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 
-const Header = ({ enableHeroText }) => (
-  <header role="banner" className="mb4">
-    <div className="header-content">
-      {enableHeroText ? (
-        <h2 className="mt0">
-          소스 코드를 아름다운 이미지로 만들고 공유해 보세요.
-          <br />
-          아래 편집기에 코드를 입력하거나 파일을 끌어다 놓으면 시작됩니다.
-        </h2>
-      ) : null}
-    </div>
-    <style jsx>
-      {`
-        .header-content {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-        }
+import { DEFAULT_GREETING, pickGreeting } from '../lib/greetings'
 
-        h2 {
-          text-align: center;
-        }
+const Header = ({ enableHeroText }) => {
+  const [greeting, setGreeting] = useState(DEFAULT_GREETING)
 
-        @media (max-width: 768px) {
-          header {
-            margin-bottom: var(--x3);
+  // 시간대별 문구는 서버/클라이언트 값이 달라 하이드레이션 후에 적용한다
+  useEffect(() => {
+    setGreeting(pickGreeting())
+  }, [])
+
+  return (
+    <header role="banner" className="mb4">
+      <div className="header-content">
+        {enableHeroText ? <h2 className="mt0">{greeting}</h2> : null}
+      </div>
+      <style jsx>
+        {`
+          .header-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
           }
+
           h2 {
-            font-size: 13px;
+            text-align: center;
           }
-        }
-      `}
-    </style>
-  </header>
-)
+
+          @media (max-width: 768px) {
+            header {
+              margin-bottom: var(--x3);
+            }
+            h2 {
+              font-size: 13px;
+            }
+          }
+        `}
+      </style>
+    </header>
+  )
+}
 
 export default Header
