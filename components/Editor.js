@@ -13,7 +13,7 @@ import Overlay from './Overlay'
 import BackgroundSelect from './BackgroundSelect'
 import Carbon from './Carbon'
 import ExportMenu from './ExportMenu'
-import CopyMenu from './CopyMenu'
+import CopyImageButton from './CopyImageButton'
 import GlobalHighlights from './Themes/GlobalHighlights'
 import LanguageIcon from './svg/Language'
 import {
@@ -27,6 +27,7 @@ import {
   DEFAULT_CODE,
   DEFAULT_SETTINGS,
   DEFAULT_LANGUAGE,
+  DEFAULT_EXPORT_FILENAME,
   DEFAULT_THEME,
 } from '../lib/constants'
 import { getRouteState } from '../lib/routing'
@@ -170,7 +171,7 @@ class Editor extends React.Component {
   exportImage = (format = 'blob', options = {}) => {
     const link = document.createElement('a')
 
-    const prefix = options.filename || this.state.name || 'carbon'
+    const prefix = options.filename || this.state.name || DEFAULT_EXPORT_FILENAME
 
     return this.getCarbonImage({ format })
       .then(blob => window.URL.createObjectURL(blob))
@@ -192,6 +193,11 @@ class Editor extends React.Component {
       })
   }
 
+  showToast = children =>
+    this.props.setToasts({ type: 'SET', toasts: [{ id: Date.now(), children, timeout: 3000 }] })
+
+  showCopyUnsupported = () => this.showToast('이 브라우저는 이미지 클립보드 복사를 지원하지 않아요')
+
   copyImage = () =>
     this.getCarbonImage({ format: 'blob' })
       .then(blob =>
@@ -201,7 +207,11 @@ class Editor extends React.Component {
           }),
         ])
       )
-      .catch(console.error)
+      .then(() => this.showToast('클립보드 복사 완료!'))
+      .catch(error => {
+        console.error(error)
+        this.showToast('클립보드 복사에 실패했어요')
+      })
 
   updateSetting = (key, value) => {
     this.updateState({ [key]: value })
@@ -220,7 +230,7 @@ class Editor extends React.Component {
         backgroundMode: 'image',
       })
     } else {
-      this.updateState({ code: file.content, language: 'auto' })
+      this.updateState({ code: file.content, language: DEFAULT_LANGUAGE })
     }
   }
 
@@ -345,7 +355,10 @@ class Editor extends React.Component {
                 format={this.format}
                 applyConfig={this.applyConfig}
               />
-              <CopyMenu copyImage={this.copyImage} carbonRef={this.carbonNode.current} />
+              <CopyImageButton
+                copyImage={this.copyImage}
+                onUnsupported={this.showCopyUnsupported}
+              />
             </div>
             <div id="style-editor-button" />
             <div className="export-buttons">

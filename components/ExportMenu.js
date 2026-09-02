@@ -1,7 +1,7 @@
 import React from 'react'
 import { useKeyboardListener, useAsyncCallback } from 'actionsack'
 
-import { COLORS, EXPORT_SIZES } from '../lib/constants'
+import { COLORS, EXPORT_SIZES, DEFAULT_EXPORT_FILENAME } from '../lib/constants'
 import Button from './Button'
 import Input from './Input'
 import Popout, { managePopout } from './Popout'
@@ -73,7 +73,12 @@ function ExportMenu({ onChange, exportSize, isVisible, toggleVisibility, exportI
       >
         <div className="export-row">
           <span className="filename">File name</span>
-          <Input ref={input} title="filename" placeholder="carbon" color={COLORS.PURPLE} />
+          <Input
+            ref={input}
+            title="filename"
+            placeholder={DEFAULT_EXPORT_FILENAME}
+            color={COLORS.PURPLE}
+          />
         </div>
         <div className="export-row">
           <span>Size</span>

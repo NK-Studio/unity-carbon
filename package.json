@@ -25,6 +25,7 @@
     "prettier": "prettier --config .prettierrc --write {.,components,lib,pages}/*.js {components,lib,pages}/**/*.js",
     "lint": "next lint --dir .",
     "validate:unity-api": "node scripts/validate-unity-api.js",
+    "import:unity-api": "node scripts/import-unity-api.js",
     "contrib:add": "all-contributors add",
     "contrib:build": "all-contributors generate",
     "cy:run": "cypress run --config-file cypress/config.json",
