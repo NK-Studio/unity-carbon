@@ -3,6 +3,7 @@ import omitBy from 'lodash.omitby'
 import { useKeyboardListener } from 'actionsack'
 
 import ThemeSelect from './ThemeSelect'
+import ListSetting from './ListSetting'
 import AngleDial, { angleFromOffsets } from './AngleDial'
 import Slider from './Slider'
 import Input from './Input'
@@ -10,7 +11,13 @@ import Toggle from './Toggle'
 import Popout, { managePopout } from './Popout'
 import Button from './Button'
 import MenuButton from './MenuButton'
-import { COLORS, DEFAULT_SETTINGS, DEFAULT_WIDTHS } from '../lib/constants'
+import {
+  COLORS,
+  DEFAULT_SETTINGS,
+  DEFAULT_WIDTHS,
+  MAX_FONT_SIZE,
+  MIN_FONT_SIZE,
+} from '../lib/constants'
 import { fileToJSON } from '../lib/util'
 import SettingsIcon from './svg/Settings'
 
@@ -143,6 +150,8 @@ function WindowSettings({
 
 function EditorSettings({
   onChange,
+  themes,
+  theme,
   size,
   lineHeight,
   lineNumbers,
@@ -153,11 +162,21 @@ function EditorSettings({
 }) {
   return (
     <div className="settings-content">
+      <div className="theme-row">
+        <ListSetting
+          title="Theme"
+          items={themes}
+          selected={theme}
+          onChange={onChange.bind(null, 'theme')}
+        >
+          {item => <span className="theme-name">{item.name}</span>}
+        </ListSetting>
+      </div>
       <Slider
         label="Size"
         value={size}
-        minValue={10}
-        maxValue={40}
+        minValue={MIN_FONT_SIZE}
+        maxValue={MAX_FONT_SIZE}
         step={0.5}
         editable
         onChange={onChange.bind(null, 'fontSize')}
@@ -198,6 +217,14 @@ function EditorSettings({
         {`
           .first-line-number-row {
             padding: 8px 12px 8px 8px;
+          }
+
+          .theme-row {
+            border-bottom: 1px solid ${COLORS.SECONDARY};
+          }
+
+          .theme-row :global(.theme-name) {
+            font-size: 12px;
           }
         `}
       </style>
@@ -336,6 +363,8 @@ class Settings extends React.PureComponent {
         return (
           <EditorSettings
             onChange={this.handleChange}
+            themes={this.props.themes}
+            theme={this.props.theme}
             onWidthChanging={this.handleWidthChanging}
             onWidthChanged={this.handleWidthChanged}
             size={this.props.fontSize}

@@ -1,9 +1,19 @@
-Copyright 2022 Janghyub Seo (https://github.com/Jhyub)
+The bundled JetBrainsMonoHangul-Regular.ttf is built by scripts/build-hangul-font.py,
+which merges the Hangul glyphs of Sarasa Mono K into JetBrains Mono, scaled to two
+JetBrains Mono cells. Both sources are licensed under the SIL Open Font License 1.1.
 
-This Font Software is licensed under the SIL Open Font License, Version 1.1.
-This license is copied below, and is also available with a FAQ at:
-https://scripts.sil.org/OFL
+JetBrains Mono
+  Copyright 2020 The JetBrains Mono Project Authors
+  https://github.com/JetBrains/JetBrainsMono
 
+Sarasa Gothic (Sarasa Mono K)
+  Copyright (c) 2015-2025, Renzhi Li (aka. Belleve Invis, belleve@typeof.net).
+  Portions Copyright (c) 2016 The Inter Project Authors.
+  Portions Copyright (c) 2014-2021 Adobe Systems Incorporated, with Reserved Font Name 'Source'.
+  Portions Copyright (c) 2012 Google Inc.
+  https://github.com/be5invis/Sarasa-Gothic
+
+The merging approach follows Jhyub/JetBrainsMonoHangul (Copyright 2022 Janghyub Seo).
 
 -----------------------------------------------------------
 SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007

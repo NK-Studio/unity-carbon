@@ -4,9 +4,4 @@
   src: url('./JetBrainsMonoHangul-Regular.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
-  /* The bundled face draws Hangul inside double-width monospace cells, which reads as
-     letter-spaced text. Latin and symbols keep JetBrains Mono; Hangul (conjoining and
-     compatibility jamo, syllables) is left to the system Korean font instead. */
-  unicode-range: U+0000-10FF, U+1200-312F, U+3190-A95F, U+A980-ABFF, U+E000-FFFF,
-    U+10000-10FFFF;
 }

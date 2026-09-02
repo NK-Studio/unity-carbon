@@ -9,10 +9,10 @@ import { CodeMirrorLink, MetaTags } from '../../components/Meta'
 import Font from '../../components/style/Font'
 import Carbon from '../../components/Carbon'
 import GlobalHighlights from '../../components/Themes/GlobalHighlights'
-import { DEFAULT_CODE, DEFAULT_SETTINGS, DEFAULT_THEME } from '../../lib/constants'
+import { DEFAULT_CODE, DEFAULT_SETTINGS, DEFAULT_THEME, THEMES_HASH } from '../../lib/constants'
 import { getRouteState } from '../../lib/routing'
 
-const Page = props => (
+const Page = ({ theme = DEFAULT_THEME, children }) => (
   <React.Fragment>
     <Head>
       <title>Carbon Embeds</title>
@@ -20,8 +20,8 @@ const Page = props => (
     <MetaTags />
     <CodeMirrorLink />
     <Font />
-    {props.children}
-    <GlobalHighlights highlights={DEFAULT_THEME.highlights} />
+    {children}
+    <GlobalHighlights theme={theme} />
     <style jsx global>
       {`
         html,
@@ -54,7 +54,7 @@ class Embed extends React.Component {
       {
         ...this.props.snippet,
         ...queryState,
-        theme: DEFAULT_THEME.id,
+        theme: THEMES_HASH[queryState.theme] ? queryState.theme : DEFAULT_THEME.id,
         highlights: null,
         fontFamily: DEFAULT_SETTINGS.fontFamily,
         fontUrl: null,
@@ -97,13 +97,16 @@ class Embed extends React.Component {
   }
 
   render() {
+    const theme = THEMES_HASH[this.state.theme] || DEFAULT_THEME
+
     return (
-      <Page>
+      <Page theme={theme}>
         <div hidden={!this.state.mounted}>
           <Carbon
             key={this.state.mounted}
             ref={this.ref}
-            config={{ ...this.state, theme: DEFAULT_THEME.id, highlights: null }}
+            theme={theme}
+            config={{ ...this.state, theme: theme.id, highlights: null }}
             readOnly={this.state.readOnly}
             copyable={this.state.copyable}
             onChange={this.updateCode}

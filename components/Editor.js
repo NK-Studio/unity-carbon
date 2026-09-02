@@ -29,6 +29,10 @@ import {
   DEFAULT_LANGUAGE,
   DEFAULT_EXPORT_FILENAME,
   DEFAULT_THEME,
+  MAX_FONT_SIZE,
+  MIN_FONT_SIZE,
+  THEMES,
+  THEMES_HASH,
 } from '../lib/constants'
 import { getRouteState } from '../lib/routing'
 import { getSettings, unescapeHtml, formatCode, omit } from '../lib/util'
@@ -55,6 +59,8 @@ class Editor extends React.Component {
   }
 
   async componentDidMount() {
+    this.registerZoomListener()
+
     const { queryState } = getRouteState(this.props.router)
 
     const newState = {
@@ -80,7 +86,9 @@ class Editor extends React.Component {
       newState.language = 'text'
     }
 
-    newState.theme = DEFAULT_THEME.id
+    if (!THEMES_HASH[newState.theme]) {
+      newState.theme = DEFAULT_THEME.id
+    }
     newState.highlights = null
     newState.fontFamily = DEFAULT_SETTINGS.fontFamily
     newState.fontUrl = null
@@ -89,9 +97,43 @@ class Editor extends React.Component {
     this.setState(newState)
   }
 
-  carbonNode = React.createRef()
+  componentWillUnmount() {
+    if (this.unregisterZoomListener) {
+      this.unregisterZoomListener()
+    }
+  }
 
-  getTheme = () => DEFAULT_THEME
+  carbonNode = React.createRef()
+  editorNode = React.createRef()
+
+  // ctrl (Windows/Linux) or cmd (macOS) + wheel resizes the code, the way it does in
+  // an IDE. The listener has to be a native, non-passive one: React routes wheel
+  // events through a passive root listener, where preventDefault is ignored and the
+  // browser would zoom the whole page instead.
+  registerZoomListener = () => {
+    const node = this.editorNode.current
+    if (!node) {
+      return
+    }
+    node.addEventListener('wheel', this.onWheel, { passive: false })
+    this.unregisterZoomListener = () => node.removeEventListener('wheel', this.onWheel)
+  }
+
+  onWheel = event => {
+    if (!(event.ctrlKey || event.metaKey) || event.deltaY === 0) {
+      return
+    }
+    event.preventDefault()
+    // trackpads report fractional deltas, so only the direction is meaningful here
+    const direction = event.deltaY < 0 ? 1 : -1
+    const current = parseFloat(this.state.fontSize) || parseFloat(DEFAULT_SETTINGS.fontSize)
+    const next = Math.min(MAX_FONT_SIZE, Math.max(MIN_FONT_SIZE, current + direction))
+    if (next !== current) {
+      this.updateSetting('fontSize', `${next}px`)
+    }
+  }
+
+  getTheme = () => THEMES_HASH[this.state.theme] || DEFAULT_THEME
 
   onUpdate = debounce(updates => this.props.onUpdate(updates), 750, {
     trailing: true,
@@ -259,13 +301,12 @@ class Editor extends React.Component {
     delete settings.custom
     delete settings.icon
     delete settings.preset
-    delete settings.theme
     delete settings.highlights
     delete settings.fontFamily
     delete settings.fontUrl
     this.updateState({
       ...settings,
-      theme: DEFAULT_THEME.id,
+      theme: THEMES_HASH[settings.theme] ? settings.theme : DEFAULT_THEME.id,
       highlights: null,
       fontFamily: DEFAULT_SETTINGS.fontFamily,
       fontUrl: null,
@@ -325,7 +366,7 @@ class Editor extends React.Component {
     const theme = this.getTheme()
 
     return (
-      <div className="editor">
+      <div className="editor" ref={this.editorNode}>
         <Toolbar>
           <Dropdown
             title="Language"
@@ -350,6 +391,8 @@ class Editor extends React.Component {
               />
               <Settings
                 {...config}
+                themes={THEMES}
+                theme={theme.id}
                 onChange={this.updateSetting}
                 resetDefaultSettings={this.resetDefaultSettings}
                 format={this.format}
@@ -371,7 +414,7 @@ class Editor extends React.Component {
           </div>
         </Toolbar>
 
-        <GlobalHighlights highlights={DEFAULT_THEME.highlights} />
+        <GlobalHighlights theme={theme} />
 
         <Dropzone accept="image/*, text/*, application/*" onDrop={this.onDrop}>
           {({ canDrop }) => (
@@ -383,7 +426,7 @@ class Editor extends React.Component {
               <Carbon
                 key={language}
                 ref={this.carbonNode}
-                config={{ ...this.state, theme: DEFAULT_THEME.id, highlights: null }}
+                config={{ ...this.state, theme: theme.id, highlights: null }}
                 onChange={this.updateCode}
                 updateWidth={this.updateWidth}
                 updateWidthConfirm={this.sync}
