@@ -41,9 +41,9 @@ function ExportMenu({ onChange, exportSize, isVisible, toggleVisibility, exportI
           onClick={handleExport('blob')}
           data-cy="quick-export-button"
           style={{ minWidth: 92, borderBottomRightRadius: 0, borderTopRightRadius: 0 }}
-          title="Quick export"
+          title="빠른 내보내기"
         >
-          {loading ? 'Exporting…' : 'Export'}
+          {loading ? '내보내는 중…' : '내보내기'}
         </Button>
         <Button
           id="export-menu"
@@ -60,7 +60,7 @@ function ExportMenu({ onChange, exportSize, isVisible, toggleVisibility, exportI
             borderTopLeftRadius: 0,
             maxWidth: '26px',
           }}
-          title="Export menu dropdown"
+          title="내보내기 메뉴"
         >
           <ArrowDown color={COLORS.PURPLE} />
         </Button>
@@ -72,7 +72,7 @@ function ExportMenu({ onChange, exportSize, isVisible, toggleVisibility, exportI
         style={popoutStyle}
       >
         <div className="export-row">
-          <span className="filename">File name</span>
+          <span className="filename">파일 이름</span>
           <Input
             ref={input}
             title="filename"
@@ -81,7 +81,7 @@ function ExportMenu({ onChange, exportSize, isVisible, toggleVisibility, exportI
           />
         </div>
         <div className="export-row">
-          <span>Size</span>
+          <span>크기</span>
           <div className="flex">
             {EXPORT_SIZES.map(({ name }, i) => (
               <Button
@@ -105,10 +105,10 @@ function ExportMenu({ onChange, exportSize, isVisible, toggleVisibility, exportI
               exportImage('blob', { filename: input.current && input.current.value, open: true })
             }
           >
-            Open
+            열기
           </Button>
           <div className="save-container">
-            <span>Download</span>
+            <span>저장</span>
             <div>
               <Button
                 center
@@ -160,6 +160,8 @@ function ExportMenu({ onChange, exportSize, isVisible, toggleVisibility, exportI
 
           .filename {
             flex-basis: 72px;
+            flex-shrink: 0;
+            white-space: nowrap;
           }
 
           .save-container {

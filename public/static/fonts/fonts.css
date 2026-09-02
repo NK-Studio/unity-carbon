@@ -1,7 +1,7 @@
 @font-face {
-  font-family: 'JetBrains Mono Hangul';
+  font-family: 'Jetendard';
   font-display: swap;
-  src: url('./JetBrainsMonoHangul-Regular.ttf') format('truetype');
+  src: url('./Jetendard-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
 }

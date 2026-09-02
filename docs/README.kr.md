@@ -29,7 +29,7 @@
 
 ## 프로젝트 폰트
 
-이 포크는 앱 UI, 코드 편집기, 임베드, 내보낸 이미지에 [Jetendard](https://github.com/kuskhan/jetendard)를 사용합니다. 다만 한글은 [Nanum Gothic Coding](https://fonts.google.com/specimen/Nanum+Gothic+Coding)으로 그립니다 — Jetendard는 한글 한 글자에 영문 두 칸을 잡아두면서 글자는 그보다 좁게 그려서 자간이 벌어져 보이기 때문입니다. 한글 폰트는 같은 family 이름에 `unicode-range`를 붙여 선언했기 때문에 글자 단위로 적용되고 한글이 실제로 그려질 때만 내려받으며, `size-adjust`로 한 글자가 정확히 영문 두 칸을 차지하도록 맞췄습니다. 두 폰트 모두 프로젝트에 포함되어 있어 외부 폰트 CDN에 의존하지 않습니다. 둘 다 SIL Open Font License 1.1로 배포되며, 포함된 라이선스는 `public/static/fonts/Jetendard-LICENSE.txt`와 `public/static/fonts/NanumGothicCoding-LICENSE.txt`에서 확인할 수 있습니다.
+이 포크는 앱 UI, 코드 편집기, 임베드, 내보낸 이미지에 [Jetendard](https://github.com/kuskhan/jetendard)를 사용합니다. JetBrains Mono Nerd Font에 Pretendard 한글을 합친 폰트로, 한글 한 글자가 영문 두 칸에 정확히 맞아 한글 주석도 모노스페이스 격자를 유지합니다. 폰트는 프로젝트에 포함되어 있어 외부 폰트 CDN에 의존하지 않습니다. SIL Open Font License 1.1로 배포되며, 포함된 라이선스는 `public/static/fonts/Jetendard-LICENSE.txt`에서 확인할 수 있습니다.
 
 ## Features
 
@@ -50,7 +50,7 @@ Carbon에 코드를 적용시키는데는 몇 가지 방법이 있습니다:
 
 #### Customization
 
-Carbon에 코드를 넣었다면 배경 색, window theme, padding 등 이미지 옵션을 커스터마이징할 수 있습니다. 폰트는 Jetendard(한글은 Nanum Gothic Coding)로 고정되며 구문 색상은 Rider Islands Dark를 사용합니다.
+Carbon에 코드를 넣었다면 배경 색, window theme, padding 등 이미지 옵션을 커스터마이징할 수 있습니다. 폰트는 Jetendard로 고정되며 구문 색상은 Rider Islands Dark를 사용합니다.
 
 #### Export/Sharing
 

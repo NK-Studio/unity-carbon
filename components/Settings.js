@@ -74,31 +74,27 @@ function WindowSettings({
       />
       <div className="row">
         <Slider
-          label="Padding (vert)"
+          label="여백 (세로)"
           value={paddingVertical}
           maxValue={200}
           onChange={onChange.bind(null, 'paddingVertical')}
         />
         <Slider
-          label="Padding (horiz)"
+          label="여백 (가로)"
           value={paddingHorizontal}
           onChange={onChange.bind(null, 'paddingHorizontal')}
           onMouseDown={onWidthChanging}
           onMouseUp={onWidthChanged}
         />
       </div>
-      <Toggle
-        label="Drop shadow"
-        enabled={dropShadow}
-        onChange={onChange.bind(null, 'dropShadow')}
-      />
+      <Toggle label="그림자" enabled={dropShadow} onChange={onChange.bind(null, 'dropShadow')} />
       {dropShadow && (
         <div className="drop-shadow-options">
-          <AngleDial label="(angle)" angle={angle} onChange={handleAngleChange} />
+          <AngleDial label="(각도)" angle={angle} onChange={handleAngleChange} />
           <div className="row">
-            <Slider label="(distance)" value={distance} onChange={handleDistanceChange} />
+            <Slider label="(거리)" value={distance} onChange={handleDistanceChange} />
             <Slider
-              label="(blur-radius)"
+              label="(번짐)"
               value={dropShadowBlurRadius}
               onChange={onChange.bind(null, 'dropShadowBlurRadius')}
             />
@@ -106,14 +102,14 @@ function WindowSettings({
         </div>
       )}
       <Toggle
-        label="Auto-adjust width"
+        label="너비 자동 조절"
         enabled={widthAdjustment}
         onChange={onChange.bind(null, 'widthAdjustment')}
       />
       {!widthAdjustment && (
         <div className="row settings-row width-row">
           <Input
-            label="Width"
+            label="너비"
             type="number"
             value={width}
             min={DEFAULT_WIDTHS.minWidth}
@@ -164,7 +160,7 @@ function EditorSettings({
     <div className="settings-content">
       <div className="theme-row">
         <ListSetting
-          title="Theme"
+          title="테마"
           items={themes}
           selected={theme}
           onChange={onChange.bind(null, 'theme')}
@@ -173,7 +169,7 @@ function EditorSettings({
         </ListSetting>
       </div>
       <Slider
-        label="Size"
+        label="크기"
         value={size}
         minValue={MIN_FONT_SIZE}
         maxValue={MAX_FONT_SIZE}
@@ -184,22 +180,18 @@ function EditorSettings({
         onMouseUp={onWidthChanged}
       />
       <Slider
-        label="Line height"
+        label="줄 간격"
         value={lineHeight}
         minValue={90}
         maxValue={250}
         unit="%"
         onChange={onChange.bind(null, 'lineHeight')}
       />
-      <Toggle
-        label="Line numbers"
-        enabled={lineNumbers}
-        onChange={onChange.bind(null, 'lineNumbers')}
-      />
+      <Toggle label="줄 번호" enabled={lineNumbers} onChange={onChange.bind(null, 'lineNumbers')} />
       {lineNumbers && (
         <div className="row settings-row first-line-number-row">
           <Input
-            label="First line number"
+            label="시작 줄 번호"
             type="number"
             value={firstLineNumber}
             min={0}
@@ -209,7 +201,7 @@ function EditorSettings({
         </div>
       )}
       <Toggle
-        label="Hidden characters"
+        label="공백 문자 표시"
         enabled={hiddenCharacters}
         onChange={onChange.bind(null, 'hiddenCharacters')}
       />
@@ -262,17 +254,17 @@ function MiscSettings({ format, reset, applyConfig, settings }) {
           style={{ borderRight: `1px solid ${COLORS.SECONDARY}` }}
           onClick={() => input.current.click()}
         >
-          Import config
+          설정 불러오기
         </Button>
         <Button center Component="a" href={download} download="carbon-config.json">
-          Export config
+          설정 내보내기
         </Button>
       </div>
       <Button center onClick={format} style={resetButtonStyle}>
-        Prettify code
+        코드 정렬
       </Button>
       <Button center color={COLORS.RED} onClick={reset} style={resetButtonStyle}>
-        Reset settings
+        설정 초기화
       </Button>
       <style jsx>
         {`
@@ -399,7 +391,7 @@ class Settings extends React.PureComponent {
         <KeyboardShortcut trigger="⌘-/" handle={this.handleOpenAndFocus} />
         <KeyboardShortcut trigger="⇧-⌘-\" handle={this.handleReset} />
         <Button
-          title="Settings Menu"
+          title="설정 메뉴"
           border
           center
           selected={isVisible}
@@ -420,9 +412,24 @@ class Settings extends React.PureComponent {
         >
           <div className="settings-bottom">
             <div className="settings-menu" ref={this.menuRef} tabIndex={-1}>
-              <MenuButton name="Window" select={this.selectMenu} selected={selectedMenu} />
-              <MenuButton name="Editor" select={this.selectMenu} selected={selectedMenu} />
-              <MenuButton name="Misc" select={this.selectMenu} selected={selectedMenu} />
+              <MenuButton
+                name="Window"
+                label="창"
+                select={this.selectMenu}
+                selected={selectedMenu}
+              />
+              <MenuButton
+                name="Editor"
+                label="에디터"
+                select={this.selectMenu}
+                selected={selectedMenu}
+              />
+              <MenuButton
+                name="Misc"
+                label="기타"
+                select={this.selectMenu}
+                selected={selectedMenu}
+              />
             </div>
             {this.renderContent()}
           </div>

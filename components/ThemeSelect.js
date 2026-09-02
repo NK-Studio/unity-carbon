@@ -58,7 +58,7 @@ class ThemeSelect extends React.Component {
       <>
         <div className="window-theme">
           <Toggle
-            label="Window controls"
+            label="창 컨트롤"
             enabled={this.props.windowControls}
             onChange={v => this.props.onChange('windowControls', v)}
           />

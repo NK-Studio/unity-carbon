@@ -4,7 +4,7 @@ import Button from './Button'
 import { COLORS } from '../lib/constants'
 import * as Arrows from './svg/Arrows'
 
-const MenuButton = React.memo(({ name, select, selected, noArrows }) => {
+const MenuButton = React.memo(({ name, label, select, selected, noArrows }) => {
   return (
     <div className="menu-button">
       <Button
@@ -12,7 +12,7 @@ const MenuButton = React.memo(({ name, select, selected, noArrows }) => {
         onClick={select(name)}
         background={selected === name ? COLORS.BLACK : COLORS.DARK_GRAY}
       >
-        {name}
+        {label || name}
         {!noArrows && (
           <div className="arrow-icon">
             <Arrows.Right />

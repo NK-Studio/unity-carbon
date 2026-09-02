@@ -118,7 +118,7 @@ You know all of those code screenshots you see online? Though the code's usually
 
 ## Project font
 
-This fork uses [Jetendard](https://github.com/kuskhan/jetendard) for the app UI, code editor, embeds, and exported images. Hangul is served from [Nanum Gothic Coding](https://fonts.google.com/specimen/Nanum+Gothic+Coding) instead: Jetendard reserves two Latin cells per syllable but draws the glyph much narrower, which reads as loose tracking. The Korean face is declared under the same family name with a `unicode-range`, so it applies per character and is only downloaded when Korean is actually rendered, and `size-adjust` keeps a syllable exactly two Latin cells wide. Both fonts are bundled locally, so rendering does not depend on a third-party font CDN. Each is distributed under the SIL Open Font License 1.1; the bundled licenses are at `public/static/fonts/Jetendard-LICENSE.txt` and `public/static/fonts/NanumGothicCoding-LICENSE.txt`.
+This fork uses [Jetendard](https://github.com/kuskhan/jetendard) for the app UI, code editor, embeds, and exported images: JetBrains Mono Nerd Font with Pretendard's Hangul merged in, each syllable fitted to exactly two Latin cells so Korean comments stay on the monospace grid. The font is bundled locally, so rendering does not depend on a third-party font CDN. It is distributed under the SIL Open Font License 1.1; the bundled license is at `public/static/fonts/Jetendard-LICENSE.txt`.
 
 ## Features
 
@@ -139,7 +139,7 @@ There are a few different ways to import code into Carbon:
 
 #### Customization
 
-Once you've got all of your code into Carbon, you can customize your image by changing the background color, window theme, padding, shadows, and more. The font is fixed to Jetendard (with Nanum Gothic Coding for Hangul) and syntax colors use Rider Islands Dark.
+Once you've got all of your code into Carbon, you can customize your image by changing the background color, window theme, padding, shadows, and more. The font is fixed to Jetendard and syntax colors use Rider Islands Dark.
 
 #### Exporting & Sharing
 
