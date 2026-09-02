@@ -56,6 +56,10 @@ class Editor extends React.Component {
     fontFamily: DEFAULT_SETTINGS.fontFamily,
     fontUrl: null,
     loading: true,
+    // the size read-out that flashes while ctrl/cmd + wheel zooming. The value stays
+    // put once hidden so it does not blank out mid-fade.
+    zoomIndicator: null,
+    zoomIndicatorVisible: false,
   }
 
   async componentDidMount() {
@@ -101,6 +105,7 @@ class Editor extends React.Component {
     if (this.unregisterZoomListener) {
       this.unregisterZoomListener()
     }
+    clearTimeout(this.zoomIndicatorTimer)
   }
 
   carbonNode = React.createRef()
@@ -131,6 +136,17 @@ class Editor extends React.Component {
     if (next !== current) {
       this.updateSetting('fontSize', `${next}px`)
     }
+    // flash the size even at the ends of the range, so a wheel that changes nothing
+    // still shows why
+    this.flashZoomIndicator(next)
+  }
+
+  // a transient read-out, the way an IDE reports the zoom level: it appears on the
+  // first wheel notch and clears a second after the last one
+  flashZoomIndicator = fontSize => {
+    clearTimeout(this.zoomIndicatorTimer)
+    this.setState({ zoomIndicator: fontSize, zoomIndicatorVisible: true })
+    this.zoomIndicatorTimer = setTimeout(() => this.setState({ zoomIndicatorVisible: false }), 1000)
   }
 
   getTheme = () => THEMES_HASH[this.state.theme] || DEFAULT_THEME
@@ -440,6 +456,10 @@ class Editor extends React.Component {
             </Overlay>
           )}
         </Dropzone>
+        <div className="zoom-indicator" aria-hidden={!this.state.zoomIndicatorVisible}>
+          {this.state.zoomIndicator != null && <span>{this.state.zoomIndicator} px</span>}
+        </div>
+
         <SnippetToolbar
           state={this.state}
           snippet={this.props.snippet}
@@ -452,10 +472,36 @@ class Editor extends React.Component {
         <style jsx>
           {`
             .editor {
+              position: relative;
               background: ${COLORS.BLACK};
               border: 3px solid ${COLORS.SECONDARY};
               border-radius: 8px;
               padding: 16px;
+            }
+
+            .zoom-indicator {
+              position: absolute;
+              bottom: 16px;
+              left: 50%;
+              transform: translateX(-50%);
+              display: flex;
+              pointer-events: none;
+              opacity: 0;
+              transition: opacity 150ms ease-out;
+            }
+
+            .zoom-indicator[aria-hidden='false'] {
+              opacity: 1;
+            }
+
+            .zoom-indicator span {
+              padding: 4px 12px;
+              border-radius: 4px;
+              background: rgba(0, 0, 0, 0.72);
+              border: 1px solid ${COLORS.SECONDARY};
+              color: ${COLORS.SECONDARY};
+              font-size: 12px;
+              font-variant-numeric: tabular-nums;
             }
 
             .export-buttons,

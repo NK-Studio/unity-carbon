@@ -134,6 +134,47 @@ class Carbon extends React.PureComponent {
     }
   }
 
+  // CodeMirror only re-measures the line-number gutter when the digit count
+  // changes, so a font-size or line-height change leaves a stale gutter width
+  // behind - the numbers then crowd (or drift away from) the code. refresh()
+  // clears that cache and re-measures.
+  componentDidUpdate(prevProps) {
+    const prev = prevProps.config || {}
+    const next = this.props.config || {}
+    if (prev.fontSize !== next.fontSize || prev.lineHeight !== next.lineHeight) {
+      this.refreshWhenFontApplied(next.fontSize)
+    }
+  }
+
+  componentWillUnmount() {
+    this.pendingRefresh = null
+  }
+
+  // styled-jsx swaps the rule asynchronously, so refreshing right away re-measures
+  // the old font size. Poll until the new size has actually landed on the node, then
+  // refresh - capped so a size we can never match cannot spin forever. Timers rather
+  // than animation frames, so this still runs while the tab is hidden.
+  refreshWhenFontApplied(fontSize, attempt = 0) {
+    const token = (this.pendingRefresh = {})
+    setTimeout(() => {
+      if (this.pendingRefresh !== token) {
+        return
+      }
+      // the CodeMirror instance hangs off its wrapper node; the React ref points at
+      // next/dynamic's loadable wrapper, which does not forward it.
+      const node = this.props.innerRef?.current?.querySelector('.CodeMirror')
+      if (!node || !node.CodeMirror) {
+        return
+      }
+      if (window.getComputedStyle(node).fontSize !== fontSize && attempt < 12) {
+        this.refreshWhenFontApplied(fontSize, attempt + 1)
+        return
+      }
+      this.pendingRefresh = null
+      node.CodeMirror.refresh()
+    }, 16)
+  }
+
   getEditor() {
     return this.editor || this.props.editorRef?.current?.editor
   }
@@ -182,6 +223,9 @@ class Carbon extends React.PureComponent {
 
   render() {
     const config = { ...DEFAULT_SETTINGS, ...this.props.config }
+    const fontSizePx = parseFloat(config.fontSize) || parseFloat(DEFAULT_SETTINGS.fontSize)
+    const gutterGap = Math.round(fontSizePx * (16 / 14))
+    const gutterMinWidth = Math.round(fontSizePx * (20 / 14))
 
     const requestedLanguage = config.language && config.language.toLowerCase()
     const resolvedLanguageMode = this.handleLanguageChange(requestedLanguage)
@@ -353,9 +397,12 @@ class Carbon extends React.PureComponent {
             .container :global(.CodeMirror__container .CodeMirror) {
               height: auto;
               min-width: inherit;
-              padding: 18px 18px;
-              padding-left: 12px;
-              ${config.lineNumbers ? 'padding-left: 12px;' : ''} border-radius: 5px;
+              /* Horizontal padding scales with the font size so the framing looks
+                 the same at every size; vertical stays fixed because the window
+                 controls overlay is a fixed 48px. 18px / 12px at the 14px default. */
+              padding: 18px 1.3em;
+              padding-left: 0.85em;
+              ${config.lineNumbers ? 'padding-left: 0.85em;' : ''} border-radius: 5px;
               font-family: ${FONT_STACK} !important;
               font-size: ${config.fontSize};
               line-height: ${config.lineHeight} !important;
@@ -388,7 +435,13 @@ class Carbon extends React.PureComponent {
 
             .container :global(.CodeMirror-linenumber) {
               cursor: pointer;
-              padding-right: 16px;
+              /* Scale the gutter metrics with the font size so the number-to-code gap
+                 keeps the same ratio at every size (16px and 20px at the 14px default).
+                 These are resolved to px rather than left as em because CodeMirror
+                 measures the gutter with a detached probe element, where em padding
+                 measures wrong and the numbers end up overlapping the code. */
+              padding-right: ${gutterGap}px;
+              min-width: ${gutterMinWidth}px;
               line-height: ${config.lineHeight} !important;
             }
 
