@@ -13,7 +13,7 @@ import Overlay from './Overlay'
 import BackgroundSelect from './BackgroundSelect'
 import Carbon from './Carbon'
 import ExportMenu from './ExportMenu'
-import CopyMenu from './CopyMenu'
+import CopyImageButton from './CopyImageButton'
 import GlobalHighlights from './Themes/GlobalHighlights'
 import LanguageIcon from './svg/Language'
 import {
@@ -27,7 +27,14 @@ import {
   DEFAULT_CODE,
   DEFAULT_SETTINGS,
   DEFAULT_LANGUAGE,
+  DEFAULT_EXPORT_FILENAME,
   DEFAULT_THEME,
+  MAX_FONT_SIZE,
+  MIN_FONT_SIZE,
+  THEMES,
+  THEMES_HASH,
+  ISLANDS_DARK_THEME,
+  ISLANDS_LIGHT_THEME,
 } from '../lib/constants'
 import { getRouteState } from '../lib/routing'
 import { getSettings, unescapeHtml, formatCode, omit } from '../lib/util'
@@ -51,9 +58,16 @@ class Editor extends React.Component {
     fontFamily: DEFAULT_SETTINGS.fontFamily,
     fontUrl: null,
     loading: true,
+    // the size read-out that flashes while ctrl/cmd + wheel zooming. The value stays
+    // put once hidden so it does not blank out mid-fade.
+    zoomIndicator: null,
+    zoomIndicatorVisible: false,
   }
 
   async componentDidMount() {
+    this.registerZoomListener()
+    window.addEventListener('keydown', this.onKeyDown)
+
     const { queryState } = getRouteState(this.props.router)
 
     const newState = {
@@ -79,18 +93,100 @@ class Editor extends React.Component {
       newState.language = 'text'
     }
 
-    newState.theme = DEFAULT_THEME.id
+    if (!THEMES_HASH[newState.theme]) {
+      newState.theme = DEFAULT_THEME.id
+    }
     newState.highlights = null
     newState.fontFamily = DEFAULT_SETTINGS.fontFamily
     newState.fontUrl = null
+    // saved states from before these were excluded can still carry a stuck read-out
+    newState.zoomIndicator = null
+    newState.zoomIndicatorVisible = false
     delete newState.preset
 
     this.setState(newState)
   }
 
-  carbonNode = React.createRef()
+  componentWillUnmount() {
+    if (this.unregisterZoomListener) {
+      this.unregisterZoomListener()
+    }
+    clearTimeout(this.zoomIndicatorTimer)
+    window.removeEventListener('keydown', this.onKeyDown)
+  }
 
-  getTheme = () => DEFAULT_THEME
+  carbonNode = React.createRef()
+  editorNode = React.createRef()
+
+  // ctrl (Windows/Linux) or cmd (macOS) + wheel resizes the code, the way it does in
+  // an IDE. The listener has to be a native, non-passive one: React routes wheel
+  // events through a passive root listener, where preventDefault is ignored and the
+  // browser would zoom the whole page instead.
+  registerZoomListener = () => {
+    const node = this.editorNode.current
+    if (!node) {
+      return
+    }
+    node.addEventListener('wheel', this.onWheel, { passive: false })
+    this.unregisterZoomListener = () => node.removeEventListener('wheel', this.onWheel)
+  }
+
+  onWheel = event => {
+    if (!(event.ctrlKey || event.metaKey) || event.deltaY === 0) {
+      return
+    }
+    event.preventDefault()
+    // trackpads report fractional deltas, so only the direction is meaningful here
+    const direction = event.deltaY < 0 ? 1 : -1
+    const current = parseFloat(this.state.fontSize) || parseFloat(DEFAULT_SETTINGS.fontSize)
+    const next = Math.min(MAX_FONT_SIZE, Math.max(MIN_FONT_SIZE, current + direction))
+    if (next !== current) {
+      this.updateSetting('fontSize', `${next}px`)
+    }
+    // flash the size even at the ends of the range, so a wheel that changes nothing
+    // still shows why
+    this.flashZoomIndicator(next)
+  }
+
+  // unlisted shortcuts for framing the code the way it gets pasted into docs:
+  // F1 strips the padding and keeps the rounded window, F2 does that and squares off
+  // the corners, F3 flips between the dark and light editor themes
+  onKeyDown = event => {
+    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
+      return
+    }
+
+    if (event.key === 'F1') {
+      event.preventDefault()
+      this.updateState({
+        paddingVertical: '0px',
+        paddingHorizontal: '0px',
+        windowTheme: 'none',
+      })
+    } else if (event.key === 'F2') {
+      event.preventDefault()
+      this.updateState({
+        paddingVertical: '0px',
+        paddingHorizontal: '0px',
+        windowTheme: 'sharp',
+      })
+    } else if (event.key === 'F3') {
+      event.preventDefault()
+      const next =
+        this.getTheme().id === ISLANDS_LIGHT_THEME.id ? ISLANDS_DARK_THEME : ISLANDS_LIGHT_THEME
+      this.updateState({ theme: next.id })
+    }
+  }
+
+  // a transient read-out, the way an IDE reports the zoom level: it appears on the
+  // first wheel notch and clears a second after the last one
+  flashZoomIndicator = fontSize => {
+    clearTimeout(this.zoomIndicatorTimer)
+    this.setState({ zoomIndicator: fontSize, zoomIndicatorVisible: true })
+    this.zoomIndicatorTimer = setTimeout(() => this.setState({ zoomIndicatorVisible: false }), 1000)
+  }
+
+  getTheme = () => THEMES_HASH[this.state.theme] || DEFAULT_THEME
 
   onUpdate = debounce(updates => this.props.onUpdate(updates), 750, {
     trailing: true,
@@ -170,7 +266,7 @@ class Editor extends React.Component {
   exportImage = (format = 'blob', options = {}) => {
     const link = document.createElement('a')
 
-    const prefix = options.filename || this.state.name || 'carbon'
+    const prefix = options.filename || this.state.name || DEFAULT_EXPORT_FILENAME
 
     return this.getCarbonImage({ format })
       .then(blob => window.URL.createObjectURL(blob))
@@ -192,6 +288,11 @@ class Editor extends React.Component {
       })
   }
 
+  showToast = children =>
+    this.props.setToasts({ type: 'SET', toasts: [{ id: Date.now(), children, timeout: 3000 }] })
+
+  showCopyUnsupported = () => this.showToast('이 브라우저는 이미지 클립보드 복사를 지원하지 않아요')
+
   copyImage = () =>
     this.getCarbonImage({ format: 'blob' })
       .then(blob =>
@@ -201,7 +302,11 @@ class Editor extends React.Component {
           }),
         ])
       )
-      .catch(console.error)
+      .then(() => this.showToast('클립보드 복사 완료!'))
+      .catch(error => {
+        console.error(error)
+        this.showToast('클립보드 복사에 실패했어요')
+      })
 
   updateSetting = (key, value) => {
     this.updateState({ [key]: value })
@@ -220,7 +325,7 @@ class Editor extends React.Component {
         backgroundMode: 'image',
       })
     } else {
-      this.updateState({ code: file.content, language: 'auto' })
+      this.updateState({ code: file.content, language: DEFAULT_LANGUAGE })
     }
   }
 
@@ -249,13 +354,12 @@ class Editor extends React.Component {
     delete settings.custom
     delete settings.icon
     delete settings.preset
-    delete settings.theme
     delete settings.highlights
     delete settings.fontFamily
     delete settings.fontUrl
     this.updateState({
       ...settings,
-      theme: DEFAULT_THEME.id,
+      theme: THEMES_HASH[settings.theme] ? settings.theme : DEFAULT_THEME.id,
       highlights: null,
       fontFamily: DEFAULT_SETTINGS.fontFamily,
       fontUrl: null,
@@ -315,7 +419,7 @@ class Editor extends React.Component {
     const theme = this.getTheme()
 
     return (
-      <div className="editor">
+      <div className="editor" ref={this.editorNode}>
         <Toolbar>
           <Dropdown
             title="Language"
@@ -340,12 +444,17 @@ class Editor extends React.Component {
               />
               <Settings
                 {...config}
+                themes={THEMES}
+                theme={theme.id}
                 onChange={this.updateSetting}
                 resetDefaultSettings={this.resetDefaultSettings}
                 format={this.format}
                 applyConfig={this.applyConfig}
               />
-              <CopyMenu copyImage={this.copyImage} carbonRef={this.carbonNode.current} />
+              <CopyImageButton
+                copyImage={this.copyImage}
+                onUnsupported={this.showCopyUnsupported}
+              />
             </div>
             <div id="style-editor-button" />
             <div className="export-buttons">
@@ -358,7 +467,7 @@ class Editor extends React.Component {
           </div>
         </Toolbar>
 
-        <GlobalHighlights highlights={DEFAULT_THEME.highlights} />
+        <GlobalHighlights theme={theme} />
 
         <Dropzone accept="image/*, text/*, application/*" onDrop={this.onDrop}>
           {({ canDrop }) => (
@@ -370,7 +479,7 @@ class Editor extends React.Component {
               <Carbon
                 key={language}
                 ref={this.carbonNode}
-                config={{ ...this.state, theme: DEFAULT_THEME.id, highlights: null }}
+                config={{ ...this.state, theme: theme.id, highlights: null }}
                 onChange={this.updateCode}
                 updateWidth={this.updateWidth}
                 updateWidthConfirm={this.sync}
@@ -384,6 +493,10 @@ class Editor extends React.Component {
             </Overlay>
           )}
         </Dropzone>
+        <div className="zoom-indicator" aria-hidden={!this.state.zoomIndicatorVisible}>
+          {this.state.zoomIndicator != null && <span>{this.state.zoomIndicator} px</span>}
+        </div>
+
         <SnippetToolbar
           state={this.state}
           snippet={this.props.snippet}
@@ -400,6 +513,35 @@ class Editor extends React.Component {
               border: 3px solid ${COLORS.SECONDARY};
               border-radius: 8px;
               padding: 16px;
+            }
+
+            /* pinned to the viewport, not to the editor frame: a large font size
+               makes that frame taller than the window, which used to park the
+               read-out below the fold exactly when it was needed */
+            .zoom-indicator {
+              position: fixed;
+              z-index: 10;
+              bottom: 24px;
+              left: 50%;
+              transform: translateX(-50%);
+              display: flex;
+              pointer-events: none;
+              opacity: 0;
+              transition: opacity 150ms ease-out;
+            }
+
+            .zoom-indicator[aria-hidden='false'] {
+              opacity: 1;
+            }
+
+            .zoom-indicator span {
+              padding: 6px 16px;
+              border-radius: 6px;
+              background: rgba(0, 0, 0, 0.85);
+              border: 1px solid ${COLORS.SECONDARY};
+              color: ${COLORS.SECONDARY};
+              font-size: 14px;
+              font-variant-numeric: tabular-nums;
             }
 
             .export-buttons,

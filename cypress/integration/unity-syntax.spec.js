@@ -500,9 +500,8 @@ public class Player : MonoBehaviour
 
 describe('Reduced language and theme configuration', () => {
   const languages = [
-    'Auto',
     'Plain Text',
-    'C#',
+    'C# (with Unity)',
     'C++',
     'CSS',
     'HTML/XML',
@@ -519,7 +518,7 @@ describe('Reduced language and theme configuration', () => {
   it('shows only the retained languages', () => {
     cy.visit('/')
     editorVisible()
-    cy.get('input[placeholder="Auto"]').click()
+    cy.get('input[placeholder="Plain Text"]').click()
 
     cy.get('[data-cy="dropdown-item"]').should('have.length', languages.length)
     languages.forEach(language => cy.contains('[data-cy="dropdown-item"]', language))

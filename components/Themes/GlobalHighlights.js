@@ -1,7 +1,12 @@
 // Theirs
 import React from 'react'
 
-export default function GlobalHighlights({ highlights }) {
+export default function GlobalHighlights({ theme }) {
+  const highlights = theme.highlights
+  // the cursor and the selection band have to follow the background, not the palette
+  const cursorColor = theme.light ? '#202020' : '#f0f0f0'
+  const selectionColor = theme.light ? 'rgba(15, 84, 214, 0.18)' : 'rgba(255, 255, 255, 0.12)'
+
   return (
     <style jsx global>
       {`
@@ -90,8 +95,14 @@ export default function GlobalHighlights({ highlights }) {
           color: ${highlights.unityEnumMember || '#6FB9C4'} !important;
         }
 
-        :global(.cm-s-islands-dark .CodeMirror-cursor) {
-          border-left: solid 2px #f0f0f0 !important;
+        :global(.CodeMirror__container .CodeMirror-cursor) {
+          border-left: solid 2px ${cursorColor} !important;
+        }
+
+        :global(.CodeMirror__container .CodeMirror-selected),
+        :global(.CodeMirror__container .CodeMirror-line::selection),
+        :global(.CodeMirror__container .CodeMirror-line > span::selection) {
+          background: ${selectionColor} !important;
         }
       `}
     </style>

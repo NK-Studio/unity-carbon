@@ -26,23 +26,24 @@ function Toast(props) {
       </div>
       <style jsx>
         {`
+          /* the toast holds its place at the bottom centre and only fades */
           @keyframes in {
             from {
-              transform: translateX(16rem);
+              opacity: 0;
             }
             to {
-              transform: translateX(0rem);
+              opacity: 1;
             }
           }
           @keyframes out {
             from {
-              transform: translateX(0rem);
+              opacity: 1;
             }
             97% {
-              transform: translateX(20rem);
+              opacity: 0;
             }
             to {
-              transform: translateX(20rem);
+              opacity: 0;
               display: none;
               height: 0;
               padding: 0;
@@ -51,14 +52,15 @@ function Toast(props) {
           }
 
           .toast {
-            padding: 8px 16px;
+            padding: 10px 18px;
             color: #fff;
             border: 1px solid #fff;
-            border-radius: 2px;
+            border-radius: 4px;
             background: #000;
             font-size: 14px;
+            text-align: center;
             animation-name: in;
-            animation-duration: 600ms;
+            animation-duration: 240ms;
             animation-direction: forwards;
             animation-fill-mode: both;
             animation-timing-function: ease-out;
@@ -97,15 +99,26 @@ function ToastContainer(props) {
         ? props.toasts
             .slice()
             .reverse()
-            .map(toast => <Toast key={toast.children} {...toast} />)
+            // an id lets the same message be shown again: a fresh key remounts the
+            // toast instead of reusing one that already timed itself out
+            .map(({ id, ...toast }) => <Toast key={id || toast.children} {...toast} />)
         : null}
       <style jsx>
         {`
           .toast {
             position: fixed;
             z-index: 9999;
-            bottom: 1rem;
-            right: 1rem;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+          }
+
+          .toast :global(.toast) {
+            pointer-events: auto;
           }
         `}
       </style>

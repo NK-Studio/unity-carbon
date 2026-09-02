@@ -1,14 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import dynamic from 'next/dynamic'
-import hljs from 'highlight.js/lib/core'
-import debounce from 'lodash.debounce'
-import ms from 'ms'
-
-import highlightLanguages from '../lib/highlight-languages'
-import { isUnityCSharp } from '../lib/unity-api/detect'
-
-highlightLanguages.forEach(([name, language]) => hljs.registerLanguage(name, language))
 
 import { Spinner } from './Spinner'
 import WindowControls from './WindowControls'
@@ -21,6 +13,7 @@ import {
   LANGUAGE_MIME_HASH,
   DEFAULT_SETTINGS,
   DEFAULT_THEME,
+  FONT_STACK,
 } from '../lib/constants'
 
 const SelectionEditor = dynamic(() => import('./SelectionEditor'), {
@@ -75,6 +68,12 @@ function removeSelectionStyles(doc, selection, className) {
     })
 }
 
+function hasSelectionStyle(doc, selection, className) {
+  return (
+    doc.findMarks(selection.from, selection.to, marker => marker.className === className).length > 0
+  )
+}
+
 class Carbon extends React.PureComponent {
   static defaultProps = {
     onChange: noop,
@@ -82,34 +81,15 @@ class Carbon extends React.PureComponent {
   }
   state = {}
 
-  handleLanguageChange = debounce(
-    (newCode, language) => {
-      if (language === 'auto') {
-        // try to set the language
-        const detectedLanguage = hljs.highlightAuto(newCode).language
-        const languageMode = searchLanguage(detectedLanguage)
+  handleLanguageChange = language => {
+    const languageMode = searchLanguage(language)
 
-        if (languageMode) {
-          return languageMode.mime || languageMode.mode
-        }
-
-        return 'text'
-      }
-
-      const languageMode = searchLanguage(language)
-
-      if (languageMode) {
-        return languageMode.mime || languageMode.mode
-      }
-
-      return 'text'
-    },
-    ms('300ms'),
-    {
-      leading: true,
-      trailing: true,
+    if (languageMode) {
+      return languageMode.mime || languageMode.mode
     }
-  )
+
+    return 'text'
+  }
 
   onBeforeChange = (editor, meta, code) => {
     if (!this.props.readOnly) {
@@ -145,60 +125,114 @@ class Carbon extends React.PureComponent {
 
   onMouseUp = () => {
     if (this.currentSelection) {
-      this.setState({ selectionAt: this.currentSelection }, () => {
+      const selectionAt = this.currentSelection
+      this.setState({ selectionAt, selectionStyles: this.readSelectionStyles(selectionAt) }, () => {
         this.currentSelection = null
       })
     } else {
-      this.setState({ selectionAt: null })
+      this.setState({ selectionAt: null, selectionStyles: null })
+    }
+  }
+
+  // CodeMirror only re-measures the line-number gutter when the digit count
+  // changes, so a font-size or line-height change leaves a stale gutter width
+  // behind - the numbers then crowd (or drift away from) the code. refresh()
+  // clears that cache and re-measures.
+  componentDidUpdate(prevProps) {
+    const prev = prevProps.config || {}
+    const next = this.props.config || {}
+    if (prev.fontSize !== next.fontSize || prev.lineHeight !== next.lineHeight) {
+      this.refreshWhenFontApplied(next.fontSize)
+    }
+  }
+
+  componentWillUnmount() {
+    this.pendingRefresh = null
+  }
+
+  // styled-jsx swaps the rule asynchronously, so refreshing right away re-measures
+  // the old font size. Poll until the new size has actually landed on the node, then
+  // refresh - capped so a size we can never match cannot spin forever. Timers rather
+  // than animation frames, so this still runs while the tab is hidden.
+  refreshWhenFontApplied(fontSize, attempt = 0) {
+    const token = (this.pendingRefresh = {})
+    setTimeout(() => {
+      if (this.pendingRefresh !== token) {
+        return
+      }
+      // the CodeMirror instance hangs off its wrapper node; the React ref points at
+      // next/dynamic's loadable wrapper, which does not forward it.
+      const node = this.props.innerRef?.current?.querySelector('.CodeMirror')
+      if (!node || !node.CodeMirror) {
+        return
+      }
+      if (window.getComputedStyle(node).fontSize !== fontSize && attempt < 12) {
+        this.refreshWhenFontApplied(fontSize, attempt + 1)
+        return
+      }
+      this.pendingRefresh = null
+      node.CodeMirror.refresh()
+    }, 16)
+  }
+
+  getEditor() {
+    return this.editor || this.props.editorRef?.current?.editor
+  }
+
+  // which styles the current selection already carries, so the toolbar buttons can
+  // show themselves as active and toggle back off on a second click
+  readSelectionStyles(selection) {
+    const editor = this.getEditor()
+    if (!editor || !editor.doc || !selection) {
+      return null
+    }
+    return {
+      highlight: hasSelectionStyle(editor.doc, selection, SELECTION_HIGHLIGHT_CLASS),
+      error: hasSelectionStyle(editor.doc, selection, SELECTION_ERROR_CLASS),
     }
   }
 
   onSelectionChange = changes => {
-    if (this.state.selectionAt) {
-      const editor = this.editor || this.props.editorRef?.current?.editor
-      if (!editor || !editor.doc) {
-        return
-      }
+    const selection = this.state.selectionAt
+    if (!selection) {
+      return
+    }
+    const editor = this.getEditor()
+    if (!editor || !editor.doc) {
+      return
+    }
 
-      if (changes.removeHighlight) {
-        removeSelectionStyles(editor.doc, this.state.selectionAt)
-      } else if (changes.backgroundColor != null) {
-        removeSelectionStyles(editor.doc, this.state.selectionAt, SELECTION_HIGHLIGHT_CLASS)
-        const css = `background-color: ${changes.backgroundColor} !important`
-        markSelection(
-          editor.doc,
-          this.state.selectionAt.from,
-          this.state.selectionAt.to,
-          SELECTION_HIGHLIGHT_CLASS,
-          css
-        )
-      } else if (changes.color != null) {
-        removeSelectionStyles(editor.doc, this.state.selectionAt, SELECTION_ERROR_CLASS)
-        const css = `color: ${changes.color} !important`
-        markSelection(
-          editor.doc,
-          this.state.selectionAt.from,
-          this.state.selectionAt.to,
-          SELECTION_ERROR_CLASS,
-          css
-        )
+    const apply = (className, css) => {
+      const active = hasSelectionStyle(editor.doc, selection, className)
+      removeSelectionStyles(editor.doc, selection, className)
+      // a second click on an already applied style clears it; changing the color
+      // while the highlight is on repaints it instead of toggling it off
+      if (!active || changes.keepActive) {
+        markSelection(editor.doc, selection.from, selection.to, className, css)
       }
     }
+
+    if (changes.backgroundColor != null) {
+      apply(SELECTION_HIGHLIGHT_CLASS, `background-color: ${changes.backgroundColor} !important`)
+    } else if (changes.color != null) {
+      apply(SELECTION_ERROR_CLASS, `color: ${changes.color} !important`)
+    }
+
+    this.setState({ selectionStyles: this.readSelectionStyles(selection) })
   }
 
   render() {
     const config = { ...DEFAULT_SETTINGS, ...this.props.config }
+    const fontSizePx = parseFloat(config.fontSize) || parseFloat(DEFAULT_SETTINGS.fontSize)
+    const gutterGap = Math.round(fontSizePx * (16 / 14))
+    const gutterMinWidth = Math.round(fontSizePx * (20 / 14))
 
     const requestedLanguage = config.language && config.language.toLowerCase()
-    const unityCSharp = isUnityCSharp(this.props.children)
-    const resolvedLanguageMode =
-      requestedLanguage === 'auto' && unityCSharp
-        ? 'text/x-csharp'
-        : this.handleLanguageChange(this.props.children, requestedLanguage)
+    const resolvedLanguageMode = this.handleLanguageChange(requestedLanguage)
+    // The Unity mode is a superset of clike C#: any C# snippet gets the Rider-style
+    // colors, whether or not it references Unity APIs.
     const languageMode =
-      resolvedLanguageMode === 'text/x-csharp' && unityCSharp
-        ? 'unity-csharp'
-        : resolvedLanguageMode
+      resolvedLanguageMode === 'text/x-csharp' ? 'unity-csharp' : resolvedLanguageMode
 
     const options = {
       screenReaderLabel: 'Code editor',
@@ -285,7 +319,10 @@ class Carbon extends React.PureComponent {
         </div>
         {selectionNode &&
           ReactDOM.createPortal(
-            <SelectionEditor onChange={this.onSelectionChange} />,
+            <SelectionEditor
+              onChange={this.onSelectionChange}
+              activeStyles={this.state.selectionStyles}
+            />,
             // TODO: don't use portal?
             selectionNode
           )}
@@ -360,14 +397,22 @@ class Carbon extends React.PureComponent {
             .container :global(.CodeMirror__container .CodeMirror) {
               height: auto;
               min-width: inherit;
-              padding: 18px 18px;
-              padding-left: 12px;
-              ${config.lineNumbers ? 'padding-left: 12px;' : ''} border-radius: 5px;
-              font-family: '${DEFAULT_SETTINGS.fontFamily}', monospace !important;
+              /* Horizontal padding scales with the font size so the framing looks
+                 the same at every size; vertical stays fixed because the window
+                 controls overlay is a fixed 48px. 18px / 12px at the 14px default. */
+              padding: 18px 1.3em;
+              padding-left: 0.85em;
+              ${config.lineNumbers ? 'padding-left: 0.85em;' : ''} border-radius: 5px;
+              font-family: ${FONT_STACK} !important;
               font-size: ${config.fontSize};
               line-height: ${config.lineHeight} !important;
-              font-variant-ligatures: contextual;
-              font-feature-settings: 'calt' 1;
+              /* Contextual alternates and kerning are shaped per script run, and a run
+                 mixing Hangul with ASCII is shaped differently from a pure Latin one in
+                 Chromium - which nudged the two comment slashes apart on lines holding
+                 Korean. Turning both off keeps every line on the mono grid. */
+              font-variant-ligatures: none;
+              font-feature-settings: 'calt' 0, 'liga' 0;
+              font-kerning: none;
               user-select: none;
             }
 
@@ -390,7 +435,13 @@ class Carbon extends React.PureComponent {
 
             .container :global(.CodeMirror-linenumber) {
               cursor: pointer;
-              padding-right: 16px;
+              /* Scale the gutter metrics with the font size so the number-to-code gap
+                 keeps the same ratio at every size (16px and 20px at the 14px default).
+                 These are resolved to px rather than left as em because CodeMirror
+                 measures the gutter with a detached probe element, where em padding
+                 measures wrong and the numbers end up overlapping the code. */
+              padding-right: ${gutterGap}px;
+              min-width: ${gutterMinWidth}px;
               line-height: ${config.lineHeight} !important;
             }
 
