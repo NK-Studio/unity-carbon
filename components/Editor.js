@@ -33,6 +33,8 @@ import {
   MIN_FONT_SIZE,
   THEMES,
   THEMES_HASH,
+  ISLANDS_DARK_THEME,
+  ISLANDS_LIGHT_THEME,
 } from '../lib/constants'
 import { getRouteState } from '../lib/routing'
 import { getSettings, unescapeHtml, formatCode, omit } from '../lib/util'
@@ -64,6 +66,7 @@ class Editor extends React.Component {
 
   async componentDidMount() {
     this.registerZoomListener()
+    window.addEventListener('keydown', this.onKeyDown)
 
     const { queryState } = getRouteState(this.props.router)
 
@@ -106,6 +109,7 @@ class Editor extends React.Component {
       this.unregisterZoomListener()
     }
     clearTimeout(this.zoomIndicatorTimer)
+    window.removeEventListener('keydown', this.onKeyDown)
   }
 
   carbonNode = React.createRef()
@@ -139,6 +143,36 @@ class Editor extends React.Component {
     // flash the size even at the ends of the range, so a wheel that changes nothing
     // still shows why
     this.flashZoomIndicator(next)
+  }
+
+  // unlisted shortcuts for framing the code the way it gets pasted into docs:
+  // F1 strips the padding and keeps the rounded window, F2 does that and squares off
+  // the corners, F3 flips between the dark and light editor themes
+  onKeyDown = event => {
+    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
+      return
+    }
+
+    if (event.key === 'F1') {
+      event.preventDefault()
+      this.updateState({
+        paddingVertical: '0px',
+        paddingHorizontal: '0px',
+        windowTheme: 'none',
+      })
+    } else if (event.key === 'F2') {
+      event.preventDefault()
+      this.updateState({
+        paddingVertical: '0px',
+        paddingHorizontal: '0px',
+        windowTheme: 'sharp',
+      })
+    } else if (event.key === 'F3') {
+      event.preventDefault()
+      const next =
+        this.getTheme().id === ISLANDS_LIGHT_THEME.id ? ISLANDS_DARK_THEME : ISLANDS_LIGHT_THEME
+      this.updateState({ theme: next.id })
+    }
   }
 
   // a transient read-out, the way an IDE reports the zoom level: it appears on the
