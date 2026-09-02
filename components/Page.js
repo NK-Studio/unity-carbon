@@ -30,8 +30,13 @@ class Page extends React.Component {
           {`
             .main {
               ${flex ? COLUMN : ''}
-              margin-top: 6rem;
-              /* padding, not margin, so the gap always stays inside the scroll area */
+              /* fill the window so a short page sits in the middle of it; once the
+                 content outgrows the window this only sets a floor and the page
+                 scrolls normally. Padding, not margin, so the gap always stays
+                 inside the scroll area. */
+              min-height: 100vh;
+              box-sizing: border-box;
+              padding-top: 6rem;
               padding-bottom: 6rem;
             }
             .login-button-container {
