@@ -99,6 +99,9 @@ class Editor extends React.Component {
     newState.highlights = null
     newState.fontFamily = DEFAULT_SETTINGS.fontFamily
     newState.fontUrl = null
+    // saved states from before these were excluded can still carry a stuck read-out
+    newState.zoomIndicator = null
+    newState.zoomIndicatorVisible = false
     delete newState.preset
 
     this.setState(newState)
