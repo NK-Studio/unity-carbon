@@ -506,16 +506,19 @@ class Editor extends React.Component {
         <style jsx>
           {`
             .editor {
-              position: relative;
               background: ${COLORS.BLACK};
               border: 3px solid ${COLORS.SECONDARY};
               border-radius: 8px;
               padding: 16px;
             }
 
+            /* pinned to the viewport, not to the editor frame: a large font size
+               makes that frame taller than the window, which used to park the
+               read-out below the fold exactly when it was needed */
             .zoom-indicator {
-              position: absolute;
-              bottom: 16px;
+              position: fixed;
+              z-index: 10;
+              bottom: 24px;
               left: 50%;
               transform: translateX(-50%);
               display: flex;
@@ -529,12 +532,12 @@ class Editor extends React.Component {
             }
 
             .zoom-indicator span {
-              padding: 4px 12px;
-              border-radius: 4px;
-              background: rgba(0, 0, 0, 0.72);
+              padding: 6px 16px;
+              border-radius: 6px;
+              background: rgba(0, 0, 0, 0.85);
               border: 1px solid ${COLORS.SECONDARY};
               color: ${COLORS.SECONDARY};
-              font-size: 12px;
+              font-size: 14px;
               font-variant-numeric: tabular-nums;
             }
 
