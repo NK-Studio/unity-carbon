@@ -22,6 +22,9 @@ const Input = React.forwardRef(
           input {
             width: ${width};
             font-size: ${fontSize};
+            /* the CSS reset skips <input>, so it keeps the browser's UI font
+               unless the app font is pulled in explicitly */
+            font-family: inherit;
             color: ${color};
             background: transparent;
             border: none;

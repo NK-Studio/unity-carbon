@@ -492,6 +492,8 @@ function useModeLoader() {
       require('codemirror/mode/jsx/jsx')
       require('codemirror/mode/swift/swift')
       require('../lib/custom/modes/unity-csharp')
+      require('../lib/custom/modes/gitignore')
+      require('../lib/custom/modes/gitattributes')
       modesLoaded = true
     }
   }, [])

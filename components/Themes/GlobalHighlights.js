@@ -94,6 +94,10 @@ export default function GlobalHighlights({ theme }) {
         :global(.cm-unity-enum-member) {
           color: ${highlights.unityEnumMember || '#6FB9C4'} !important;
         }
+        /* glob metacharacters in .gitignore / .gitattributes patterns */
+        :global(.cm-git-glob) {
+          color: ${highlights.gitGlob || '#ED94C0'} !important;
+        }
 
         :global(.CodeMirror__container .CodeMirror-cursor) {
           border-left: solid 2px ${cursorColor} !important;

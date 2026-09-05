@@ -47,6 +47,9 @@ const Button = ({
           align-items: ${center ? 'center' : 'initial'};
           align-self: stretch;
           font-size: ${large ? '14px' : '12px'};
+          /* the CSS reset skips <button>, so it keeps the browser's UI font
+             unless the app font is pulled in explicitly */
+          font-family: inherit;
         }
 
         ${Component}:hover, ${Component}:focus {
