@@ -240,8 +240,9 @@ class Editor extends React.Component {
     this.history.index = entries.length
   }
 
-  // Carbon remounts when the language changes and CodeMirror's undo stack goes with it,
-  // so the text steps already recorded can no longer be replayed.
+  // A replaced CodeMirror takes its undo stack with it, leaving text steps in the
+  // history that can no longer be replayed. Nothing remounts it today - the language
+  // change deliberately does not - but a silently dead undo is worth guarding against.
   dropTextHistory() {
     const { entries, index } = this.history
     let removedBeforeIndex = 0
@@ -640,9 +641,10 @@ class Editor extends React.Component {
               isOver={canDrop}
               title={`Drop your file here to import ${canDrop ? '✋' : '✊'}`}
             >
-              {/*key ensures Carbon's internal language state is updated when it's changed by Dropdown*/}
+              {/* deliberately unkeyed: remounting on a language change would take
+                  CodeMirror's undo history with it. react-codemirror2 pushes the new
+                  mode through setOption instead. */}
               <Carbon
-                key={language}
                 ref={this.carbonNode}
                 config={{ ...this.state, theme: theme.id, highlights: null }}
                 onChange={this.updateCode}
