@@ -3,10 +3,13 @@ import { useKeyboardListener } from 'actionsack'
 import Popout from './Popout'
 import Button from './Button'
 import ColorPicker from './ColorPicker'
-import { COLORS } from '../lib/constants'
+import { COLORS, DEFAULT_HIGHLIGHT_COLORS } from '../lib/constants'
 
-const DEFAULT_HIGHLIGHT_COLOR = '#4b4310'
 const ERROR_TEXT_COLOR = '#ED5A44'
+const DEFAULT_COLOR_VALUES = Object.values(DEFAULT_HIGHLIGHT_COLORS)
+// the other presets are pastels that read on either background; only the first
+// swatch is the one tied to the theme
+const SHARED_PRESETS = ['#A7F3D0', '#93C5FD', '#F9A8D4', '#FDBA74']
 // the presets range from near-black olive to pastel, so the label has to follow the fill
 function readableTextColor(hex) {
   const value = String(hex).replace('#', '')
@@ -23,9 +26,15 @@ function readableTextColor(hex) {
   return luminance > 0.4 ? COLORS.BLACK : COLORS.SECONDARY
 }
 
-function SelectionEditor({ onChange, activeStyles }) {
+function SelectionEditor({ onChange, activeStyles, light }) {
+  const themeDefault = light ? DEFAULT_HIGHLIGHT_COLORS.light : DEFAULT_HIGHLIGHT_COLORS.dark
   const [open, setOpen] = React.useState(false)
-  const [color, setColor] = React.useState(DEFAULT_HIGHLIGHT_COLOR)
+  const [color, setColor] = React.useState(themeDefault)
+
+  // a swatch the reader never touched follows the theme; one they picked stays put
+  React.useEffect(() => {
+    setColor(current => (DEFAULT_COLOR_VALUES.includes(current) ? themeDefault : current))
+  }, [themeDefault])
 
   useKeyboardListener('Escape', () => setOpen(false))
 
@@ -90,7 +99,7 @@ function SelectionEditor({ onChange, activeStyles }) {
             <ColorPicker
               color={color}
               disableAlpha={true}
-              presets={['#4b4310', '#A7F3D0', '#93C5FD', '#F9A8D4', '#FDBA74']}
+              presets={[themeDefault, ...SHARED_PRESETS]}
               onChangePreview={handleColorChange}
             />
           </div>

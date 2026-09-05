@@ -13,6 +13,7 @@ import {
   LANGUAGE_MIME_HASH,
   DEFAULT_SETTINGS,
   DEFAULT_THEME,
+  DEFAULT_HIGHLIGHT_COLORS,
   FONT_FAMILY,
   FONT_STACK,
 } from '../lib/constants'
@@ -178,6 +179,52 @@ class Carbon extends React.PureComponent {
     if (prev.fontSize !== next.fontSize || prev.lineHeight !== next.lineHeight) {
       this.refreshWhenFontApplied(next.fontSize)
     }
+    const wasLight = !!(prevProps.theme && prevProps.theme.light)
+    if (wasLight !== this.isLightTheme()) {
+      this.retintDefaultHighlights(wasLight)
+    }
+  }
+
+  isLightTheme() {
+    return !!(this.props.theme && this.props.theme.light)
+  }
+
+  // A highlight left at the theme's own default would carry a dark-mode swatch onto a
+  // light background once the theme flips (and the reverse). Repaint just those; a
+  // color the reader picked is theirs and stays.
+  retintDefaultHighlights(wasLight) {
+    const editor = this.getEditor()
+    if (!editor || !editor.doc) {
+      return
+    }
+    const before = wasLight ? DEFAULT_HIGHLIGHT_COLORS.light : DEFAULT_HIGHLIGHT_COLORS.dark
+    const after = this.isLightTheme()
+      ? DEFAULT_HIGHLIGHT_COLORS.light
+      : DEFAULT_HIGHLIGHT_COLORS.dark
+    if (before === after) {
+      return
+    }
+    const previousColor = before.toLowerCase()
+    editor.doc.getAllMarks().forEach(marker => {
+      if (marker.className !== SELECTION_HIGHLIGHT_CLASS || !marker.css) {
+        return
+      }
+      if (!marker.css.toLowerCase().includes(previousColor)) {
+        return
+      }
+      const range = marker.find()
+      if (!range) {
+        return
+      }
+      marker.clear()
+      markSelection(
+        editor.doc,
+        range.from,
+        range.to,
+        SELECTION_HIGHLIGHT_CLASS,
+        `background-color: ${after} !important`
+      )
+    })
   }
 
   componentDidMount() {
@@ -394,6 +441,7 @@ class Carbon extends React.PureComponent {
             <SelectionEditor
               onChange={this.onSelectionChange}
               activeStyles={this.state.selectionStyles}
+              light={light}
             />,
             // TODO: don't use portal?
             selectionNode
