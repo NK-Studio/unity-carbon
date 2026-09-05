@@ -27,6 +27,12 @@ const CodeMirror = dynamic(() => import('react-codemirror2').then(module => modu
 const SELECTION_HIGHLIGHT_CLASS = 'selection-highlight'
 const SELECTION_ERROR_CLASS = 'selection-error'
 
+// CodeMirror tags mouse-driven selection changes with this origin. Everything else -
+// ⌘A, shift+arrow, a programmatic setSelection - arrives with another origin or none.
+function isMouseSelection(data) {
+  return data.origin === '*mouse'
+}
+
 function searchLanguage(l) {
   return LANGUAGE_NAME_HASH[l] || LANGUAGE_MODE_HASH[l] || LANGUAGE_MIME_HASH[l]
 }
@@ -109,7 +115,12 @@ class Carbon extends React.PureComponent {
       selection.head.line === selection.anchor.line &&
       selection.head.ch === selection.anchor.ch
     ) {
-      return (this.currentSelection = null)
+      this.currentSelection = null
+      // no mouseup is coming to put the toolbar away, so do it here
+      if (!isMouseSelection(data)) {
+        this.commitSelectionLater()
+      }
+      return
     }
     if (selection.head.line + selection.head.ch > selection.anchor.line + selection.anchor.ch) {
       this.currentSelection = {
@@ -122,17 +133,39 @@ class Carbon extends React.PureComponent {
         to: selection.anchor,
       }
     }
+    // A mouse drag fires this the whole way across, so the toolbar waits for mouseup
+    // rather than rebuilding on every intermediate range. ⌘A and shift+arrow have no
+    // mouseup to wait for - without this they never get the Highlight/Error controls.
+    if (!isMouseSelection(data)) {
+      this.commitSelectionLater()
+    }
   }
 
   onMouseUp = () => {
-    if (this.currentSelection) {
-      const selectionAt = this.currentSelection
-      this.setState({ selectionAt, selectionStyles: this.readSelectionStyles(selectionAt) }, () => {
-        this.currentSelection = null
-      })
-    } else {
-      this.setState({ selectionAt: null, selectionStyles: null })
+    this.commitSelection()
+  }
+
+  // beforeSelectionChange runs inside CodeMirror's own operation, before the new
+  // selection is applied; let that finish before React re-renders on top of it
+  commitSelectionLater() {
+    Promise.resolve().then(() => {
+      if (!this.unmounted) {
+        this.commitSelection()
+      }
+    })
+  }
+
+  commitSelection() {
+    const selectionAt = this.currentSelection
+    if (!selectionAt) {
+      if (this.state.selectionAt) {
+        this.setState({ selectionAt: null, selectionStyles: null })
+      }
+      return
     }
+    this.setState({ selectionAt, selectionStyles: this.readSelectionStyles(selectionAt) }, () => {
+      this.currentSelection = null
+    })
   }
 
   // CodeMirror only re-measures the line-number gutter when the digit count
