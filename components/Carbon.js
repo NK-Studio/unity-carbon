@@ -334,8 +334,27 @@ class Carbon extends React.PureComponent {
   onEditorMount = editor => {
     this.editor = editor
     if (this.props.onEditorMount) {
-      this.props.onEditorMount(editor)
+      this.props.onEditorMount(editor, {
+        restoreMarks: this.restoreMarks,
+        refreshSelectionStyles: this.refreshSelectionStyles,
+      })
     }
+  }
+
+  // The shared history hands the marks back here rather than writing them itself, so
+  // the Highlight/Error buttons are re-read from the document in the same breath -
+  // otherwise they keep showing the state the marks had before the history moved.
+  restoreMarks = marks => {
+    const editor = this.getEditor()
+    if (!editor || !editor.doc) {
+      return
+    }
+    writeSelectionMarks(editor.doc, marks)
+    this.refreshSelectionStyles()
+  }
+
+  refreshSelectionStyles = () => {
+    this.setState(state => ({ selectionStyles: this.readSelectionStyles(state.selectionAt) }))
   }
 
   // which styles the current selection already carries, so the toolbar buttons can

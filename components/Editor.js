@@ -11,7 +11,7 @@ import Settings from './Settings'
 import Toolbar from './Toolbar'
 import Overlay from './Overlay'
 import BackgroundSelect from './BackgroundSelect'
-import Carbon, { writeSelectionMarks } from './Carbon'
+import Carbon from './Carbon'
 import ExportMenu from './ExportMenu'
 import CopyImageButton from './CopyImageButton'
 import GlobalHighlights from './Themes/GlobalHighlights'
@@ -276,11 +276,12 @@ class Editor extends React.Component {
 
   onMarksChange = (before, after) => this.recordHistory({ kind: 'marks', before, after })
 
-  onEditorMount = editor => {
+  onEditorMount = (editor, controls) => {
     if (this.historyEditor && this.historyEditor !== editor) {
       this.dropTextHistory()
     }
     this.historyEditor = editor
+    this.editorControls = controls
     this.textUndoSize = editor.historySize().undo
     editor.on('changes', this.onEditorChanges)
   }
@@ -314,14 +315,18 @@ class Editor extends React.Component {
         return
       }
       if (entry.kind === 'marks') {
-        if (editor && editor.doc) {
-          writeSelectionMarks(editor.doc, direction === 'undo' ? entry.before : entry.after)
+        if (this.editorControls) {
+          this.editorControls.restoreMarks(direction === 'undo' ? entry.before : entry.after)
         }
         return
       }
       this.setState(direction === 'undo' ? entry.before : entry.after, this.sync)
     } finally {
       this.applyingHistory = false
+      // a text step can take marks with it, so the style buttons are re-read either way
+      if (this.editorControls) {
+        this.editorControls.refreshSelectionStyles()
+      }
     }
   }
 
