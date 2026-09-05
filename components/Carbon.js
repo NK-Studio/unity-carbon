@@ -82,6 +82,35 @@ function hasSelectionStyle(doc, selection, className) {
   )
 }
 
+const SELECTION_MARK_CLASSES = [SELECTION_HIGHLIGHT_CLASS, SELECTION_ERROR_CLASS]
+
+function selectionMarkers(doc) {
+  return doc.getAllMarks().filter(marker => SELECTION_MARK_CLASSES.includes(marker.className))
+}
+
+// Highlight and error styling are CodeMirror marks, and markText stays out of its undo
+// history - so the shared history snapshots them and replays them by hand.
+export function readSelectionMarks(doc) {
+  return selectionMarkers(doc)
+    .map(marker => {
+      const range = marker.find()
+      return (
+        range && {
+          from: range.from,
+          to: range.to,
+          className: marker.className,
+          css: marker.css,
+        }
+      )
+    })
+    .filter(Boolean)
+}
+
+export function writeSelectionMarks(doc, marks) {
+  selectionMarkers(doc).forEach(marker => marker.clear())
+  marks.forEach(mark => markSelection(doc, mark.from, mark.to, mark.className, mark.css))
+}
+
 class Carbon extends React.PureComponent {
   static defaultProps = {
     onChange: noop,
@@ -298,6 +327,17 @@ class Carbon extends React.PureComponent {
     return this.editor || this.props.editorRef?.current?.editor
   }
 
+  runUndo = () => this.props.onUndo && this.props.onUndo()
+
+  runRedo = () => this.props.onRedo && this.props.onRedo()
+
+  onEditorMount = editor => {
+    this.editor = editor
+    if (this.props.onEditorMount) {
+      this.props.onEditorMount(editor)
+    }
+  }
+
   // which styles the current selection already carries, so the toolbar buttons can
   // show themselves as active and toggle back off on a second click
   readSelectionStyles(selection) {
@@ -331,10 +371,16 @@ class Carbon extends React.PureComponent {
       }
     }
 
+    const before = readSelectionMarks(editor.doc)
+
     if (changes.backgroundColor != null) {
       apply(SELECTION_HIGHLIGHT_CLASS, `background-color: ${changes.backgroundColor} !important`)
     } else if (changes.color != null) {
       apply(SELECTION_ERROR_CLASS, `color: ${changes.color} !important`)
+    }
+
+    if (this.props.onMarksChange) {
+      this.props.onMarksChange(before, readSelectionMarks(editor.doc))
     }
 
     this.setState({ selectionStyles: this.readSelectionStyles(selection) })
@@ -365,6 +411,13 @@ class Carbon extends React.PureComponent {
       smartIndent: true,
       extraKeys: {
         'Shift-Tab': 'indentLess',
+        // CodeMirror would otherwise undo only its own text edits; the Editor keeps a
+        // single history covering settings and highlights as well
+        'Cmd-Z': this.runUndo,
+        'Ctrl-Z': this.runUndo,
+        'Shift-Cmd-Z': this.runRedo,
+        'Shift-Ctrl-Z': this.runRedo,
+        'Ctrl-Y': this.runRedo,
       },
       readOnly: this.props.readOnly,
       showInvisibles: config.hiddenCharacters,
@@ -415,6 +468,7 @@ class Carbon extends React.PureComponent {
                 className={`CodeMirror__container window-theme__${config.windowTheme}`}
                 value={this.props.children}
                 options={options}
+                editorDidMount={this.onEditorMount}
                 onBeforeChange={this.onBeforeChange}
                 onGutterClick={this.props.onGutterClick}
                 onSelection={this.onSelection}

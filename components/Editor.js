@@ -11,7 +11,7 @@ import Settings from './Settings'
 import Toolbar from './Toolbar'
 import Overlay from './Overlay'
 import BackgroundSelect from './BackgroundSelect'
-import Carbon from './Carbon'
+import Carbon, { writeSelectionMarks } from './Carbon'
 import ExportMenu from './ExportMenu'
 import CopyImageButton from './CopyImageButton'
 import GlobalHighlights from './Themes/GlobalHighlights'
@@ -40,6 +40,11 @@ import {
 import { getRouteState } from '../lib/routing'
 import { getSettings, unescapeHtml, formatCode, omit } from '../lib/util'
 import domtoimage from '../lib/dom-to-image'
+
+// Text edits stay in CodeMirror's own history, and these keys are either chrome or
+// derived state - everything else the reader changes is worth a step.
+const UNTRACKED_SETTINGS = ['code', 'loading', 'zoomIndicator', 'zoomIndicatorVisible']
+const MAX_HISTORY_ENTRIES = 200
 
 const languageIcon = <LanguageIcon />
 const themeIcon = <ThemeIcon />
@@ -154,6 +159,23 @@ class Editor extends React.Component {
   // F1 strips the padding and keeps the rounded window, F2 does that and squares off
   // the corners, F3 flips between the dark and light editor themes
   onKeyDown = event => {
+    if ((event.metaKey || event.ctrlKey) && !event.altKey) {
+      // CodeMirror's own keymap already routes these to the shared history while the
+      // editor has focus, so handling them again here would undo twice
+      if (this.isEditorFocused()) {
+        return
+      }
+      const key = event.key.toLowerCase()
+      if (key === 'z') {
+        event.preventDefault()
+        return event.shiftKey ? this.redo() : this.undo()
+      }
+      if (key === 'y' && !event.shiftKey) {
+        event.preventDefault()
+        return this.redo()
+      }
+    }
+
     if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
       return
     }
@@ -188,6 +210,11 @@ class Editor extends React.Component {
     this.zoomIndicatorTimer = setTimeout(() => this.setState({ zoomIndicatorVisible: false }), 1000)
   }
 
+  isEditorFocused() {
+    const node = this.editorNode.current && this.editorNode.current.querySelector('.CodeMirror')
+    return !!node && node.contains(document.activeElement)
+  }
+
   getTheme = () => THEMES_HASH[this.state.theme] || DEFAULT_THEME
 
   onUpdate = debounce(updates => this.props.onUpdate(updates), 750, {
@@ -197,7 +224,129 @@ class Editor extends React.Component {
 
   sync = () => this.onUpdate(this.state)
 
-  updateState = updates => this.setState(updates, this.sync)
+  // One timeline for everything the reader can walk back through. A `text` step is
+  // delegated to CodeMirror, which already folds a typing burst into a single step;
+  // the others carry the values to restore. `index` counts the applied entries.
+  history = { entries: [], index: 0 }
+
+  recordHistory(entry) {
+    const { entries, index } = this.history
+    // a new action after undoing abandons whatever was ahead, the way any editor does
+    entries.length = index
+    entries.push(entry)
+    if (entries.length > MAX_HISTORY_ENTRIES) {
+      entries.shift()
+    }
+    this.history.index = entries.length
+  }
+
+  // Carbon remounts when the language changes and CodeMirror's undo stack goes with it,
+  // so the text steps already recorded can no longer be replayed.
+  dropTextHistory() {
+    const { entries, index } = this.history
+    let removedBeforeIndex = 0
+    const kept = entries.filter((entry, position) => {
+      if (entry.kind !== 'text') {
+        return true
+      }
+      if (position < index) {
+        removedBeforeIndex += 1
+      }
+      return false
+    })
+    this.history.entries = kept
+    this.history.index = index - removedBeforeIndex
+  }
+
+  recordSettingsChange(changes) {
+    const before = {}
+    const after = {}
+    Object.keys(changes).forEach(key => {
+      if (UNTRACKED_SETTINGS.includes(key) || this.state[key] === changes[key]) {
+        return
+      }
+      before[key] = this.state[key]
+      after[key] = changes[key]
+    })
+    if (Object.keys(after).length > 0) {
+      this.recordHistory({ kind: 'settings', before, after })
+    }
+  }
+
+  onMarksChange = (before, after) => this.recordHistory({ kind: 'marks', before, after })
+
+  onEditorMount = editor => {
+    if (this.historyEditor && this.historyEditor !== editor) {
+      this.dropTextHistory()
+    }
+    this.historyEditor = editor
+    this.textUndoSize = editor.historySize().undo
+    editor.on('changes', this.onEditorChanges)
+  }
+
+  onEditorChanges = editor => {
+    const size = editor.historySize().undo
+    const added = size - this.textUndoSize
+    this.textUndoSize = size
+    // Only a genuinely new undo event earns a step; a coalesced keystroke adds none,
+    // and a redo we just performed would otherwise record itself and truncate the
+    // rest of the redo stack.
+    if (added > 0 && !this.applyingHistory) {
+      this.recordHistory({ kind: 'text' })
+    }
+  }
+
+  applyHistoryEntry(entry, direction) {
+    this.applyingHistory = true
+    try {
+      const editor = this.historyEditor
+      if (entry.kind === 'text') {
+        if (!editor) {
+          return
+        }
+        if (direction === 'undo') {
+          editor.undo()
+        } else {
+          editor.redo()
+        }
+        this.textUndoSize = editor.historySize().undo
+        return
+      }
+      if (entry.kind === 'marks') {
+        if (editor && editor.doc) {
+          writeSelectionMarks(editor.doc, direction === 'undo' ? entry.before : entry.after)
+        }
+        return
+      }
+      this.setState(direction === 'undo' ? entry.before : entry.after, this.sync)
+    } finally {
+      this.applyingHistory = false
+    }
+  }
+
+  undo = () => {
+    const { entries, index } = this.history
+    if (index === 0) {
+      return
+    }
+    this.history.index = index - 1
+    this.applyHistoryEntry(entries[index - 1], 'undo')
+  }
+
+  redo = () => {
+    const { entries, index } = this.history
+    if (index === entries.length) {
+      return
+    }
+    this.history.index = index + 1
+    this.applyHistoryEntry(entries[index], 'redo')
+  }
+
+  updateState = updates => {
+    const changes = typeof updates === 'function' ? updates(this.state) : updates
+    this.recordSettingsChange(changes)
+    this.setState(changes, this.sync)
+  }
 
   updateCode = code => this.updateState({ code })
   updateTitleBar = titleBar => this.updateState({ titleBar })
@@ -497,6 +646,10 @@ class Editor extends React.Component {
                 ref={this.carbonNode}
                 config={{ ...this.state, theme: theme.id, highlights: null }}
                 onChange={this.updateCode}
+                onEditorMount={this.onEditorMount}
+                onMarksChange={this.onMarksChange}
+                onUndo={this.undo}
+                onRedo={this.redo}
                 updateWidth={this.updateWidth}
                 updateWidthConfirm={this.sync}
                 loading={this.state.loading}
