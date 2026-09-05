@@ -3,6 +3,9 @@ const withOffline = require('next-pwa')
 
 const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === 'true' })
 
+// the footer reads this; package.json is the single place the version is written
+const { version } = require('./package.json')
+
 const isProd = process.env.NODE_ENV === 'production'
 const basePath =
   process.env.BASE_PATH !== undefined ? process.env.BASE_PATH : isProd ? '/Unity-Carbon' : ''
@@ -14,6 +17,7 @@ module.exports = withBundleAnalyzer(
     trailingSlash: true,
     env: {
       BASE_PATH: basePath,
+      APP_VERSION: version,
     },
     pwa: {
       disable: true,
