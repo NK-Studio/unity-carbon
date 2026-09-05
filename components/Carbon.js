@@ -13,6 +13,7 @@ import {
   LANGUAGE_MIME_HASH,
   DEFAULT_SETTINGS,
   DEFAULT_THEME,
+  FONT_FAMILY,
   FONT_STACK,
 } from '../lib/constants'
 
@@ -146,8 +147,46 @@ class Carbon extends React.PureComponent {
     }
   }
 
+  componentDidMount() {
+    this.refreshWhenWebFontLoaded()
+  }
+
   componentWillUnmount() {
     this.pendingRefresh = null
+    this.unmounted = true
+  }
+
+  // The app font is served with `font-display: swap`, so the first paint measures
+  // against a fallback face. CodeMirror caches the character width it sees at that
+  // moment and keeps deriving positions from it - selection rectangles and wrap
+  // points among them - which is why Select All on a freshly opened page stops short
+  // of the last lines. Re-measure once the real face has landed.
+  refreshWhenWebFontLoaded() {
+    const fonts = typeof document !== 'undefined' && document.fonts
+    if (!fonts) {
+      return
+    }
+    // load() settles on the app face specifically and starts the fetch if layout has
+    // not asked for it yet; ready covers anything else the page is still pulling in
+    Promise.all([fonts.load(`1em "${FONT_FAMILY}"`), fonts.ready])
+      .catch(() => {})
+      .then(() => this.refreshEditor())
+  }
+
+  // next/dynamic may still be loading CodeMirror when the font resolves, so keep
+  // looking for the instance for a moment rather than giving up on the first miss
+  refreshEditor(attempt = 0) {
+    if (this.unmounted) {
+      return
+    }
+    const node = this.props.innerRef?.current?.querySelector('.CodeMirror')
+    if (node && node.CodeMirror) {
+      node.CodeMirror.refresh()
+      return
+    }
+    if (attempt < 20) {
+      setTimeout(() => this.refreshEditor(attempt + 1), 100)
+    }
   }
 
   // styled-jsx swaps the rule asynchronously, so refreshing right away re-measures
