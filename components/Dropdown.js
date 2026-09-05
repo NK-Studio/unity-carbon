@@ -303,6 +303,18 @@ const ListItem = ({ children, color, isHighlighted, isSelected, itemWrapper, ite
           .dropdown-list-item-text {
             flex-grow: 1;
             color: ${itemColor};
+            /* a flex item will not shrink past its own text by default, which pushed
+               long names (the theme list) straight under the checkmark */
+            min-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+          }
+
+          /* the checkmark keeps its size and its distance from the name */
+          .dropdown-list-item > :global(svg) {
+            flex-shrink: 0;
+            margin-left: 8px;
           }
         `}
       </style>

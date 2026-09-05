@@ -16,6 +16,7 @@ import ExportMenu from './ExportMenu'
 import CopyImageButton from './CopyImageButton'
 import GlobalHighlights from './Themes/GlobalHighlights'
 import LanguageIcon from './svg/Language'
+import ThemeIcon from './svg/Theme'
 import {
   LANGUAGES,
   LANGUAGE_MIME_HASH,
@@ -41,6 +42,7 @@ import { getSettings, unescapeHtml, formatCode, omit } from '../lib/util'
 import domtoimage from '../lib/dom-to-image'
 
 const languageIcon = <LanguageIcon />
+const themeIcon = <ThemeIcon />
 
 const SnippetToolbar = dynamic(() => import('./SnippetToolbar'), {
   loading: () => null,
@@ -335,6 +337,13 @@ class Editor extends React.Component {
     }
   }
 
+  // the settings menu carries the same list; both write the theme id
+  updateTheme = theme => {
+    if (theme) {
+      this.updateSetting('theme', theme.id)
+    }
+  }
+
   updateBackground = ({ photographer, ...changes } = {}) => {
     if (photographer) {
       this.updateState(({ code = DEFAULT_CODE }) => ({
@@ -421,6 +430,13 @@ class Editor extends React.Component {
     return (
       <div className="editor" ref={this.editorNode}>
         <Toolbar>
+          <Dropdown
+            title="Theme"
+            icon={themeIcon}
+            selected={theme}
+            list={THEMES}
+            onChange={this.updateTheme}
+          />
           <Dropdown
             title="Language"
             icon={languageIcon}
